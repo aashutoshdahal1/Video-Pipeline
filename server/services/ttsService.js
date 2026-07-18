@@ -40,13 +40,28 @@ async function waitForPocketTts(retries = 20, intervalMs = 1000) {
   throw new Error(`pocket-tts did not become ready after ${(retries * intervalMs / 1000).toFixed(0)}s`);
 }
 
+function killPort8000() {
+  return new Promise(resolve => {
+    const { execFile } = require('child_process');
+    execFile('lsof', ['-ti', 'TCP:8000'], (err, stdout) => {
+      if (err || !stdout.trim()) return resolve();
+      const pids = stdout.trim().split('\n').filter(Boolean);
+      for (const pid of pids) { try { process.kill(Number(pid)); } catch {} }
+      setTimeout(resolve, 500);
+    });
+  });
+}
+
 async function ensurePocketTts() {
-  try {
-    await axios.get(`${TTS_URL}/health`, { timeout: 1000 });
-  } catch {
-    startPocketTts();
-    await waitForPocketTts();
+  // Only skip startup if WE own the running process and it's healthy
+  if (pocketTtsProc && !pocketTtsProc.killed) {
+    try { await axios.get(`${TTS_URL}/health`, { timeout: 1000 }); return; } catch {}
   }
+  // Kill any stale process on the port (wrong python, crashed, etc.)
+  await killPort8000();
+  pocketTtsProc = null;
+  startPocketTts();
+  await waitForPocketTts();
 }
 
 async function ttsPost(form) {

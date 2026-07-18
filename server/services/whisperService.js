@@ -70,8 +70,11 @@ async function isWhisperHealthy() {
 }
 
 async function ensureWhisper() {
-  if (await isWhisperHealthy()) return;
+  // Check if a process we own is already running
+  if (whisperProc && !whisperProc.killed && await isWhisperHealthy()) return;
+  // Kill anything on the port (could be a stale system-python process)
   await killPort8001();
+  whisperProc = null;
   startWhisper();
   await waitForWhisper();
 }
