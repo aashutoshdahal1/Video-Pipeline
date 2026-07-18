@@ -11,6 +11,21 @@ const WHISPER_PYTHON = path.join(WHISPER_DIR, 'venv', 'bin', 'python');
 
 let whisperProc = null;
 
+function killPort8001() {
+  // Kill any stale process on port 8001 (e.g. started with wrong Python)
+  return new Promise(resolve => {
+    const { execFile } = require('child_process');
+    execFile('lsof', ['-ti', 'TCP:8001'], (err, stdout) => {
+      if (err || !stdout.trim()) return resolve();
+      const pids = stdout.trim().split('\n').filter(Boolean);
+      for (const pid of pids) {
+        try { process.kill(Number(pid)); } catch {}
+      }
+      setTimeout(resolve, 500);
+    });
+  });
+}
+
 function startWhisper() {
   if (whisperProc && !whisperProc.killed) return;
   console.log('[whisper] Starting automatically…');
@@ -38,11 +53,25 @@ async function waitForWhisper(retries = 30, intervalMs = 1000) {
   throw new Error(`Whisper did not become ready after ${retries}s`);
 }
 
-async function ensureWhisper() {
+async function isWhisperHealthy() {
   try {
     const r = await fetch(`${WHISPER_URL}/`, { method: 'GET', timeout: 1000 });
-    if (r.status < 500) return;
-  } catch {}
+    // Port is open but check that the process actually has whisper loaded:
+    // a broken process returns 200 from uvicorn but errors on every request.
+    // We verify by hitting /api/transcribe with no body — a healthy whisper
+    // returns 422 (validation error), a broken one returns something else or
+    // streams an error immediately.
+    if (r.status >= 500) return false;
+    const probe = await fetch(`${WHISPER_URL}/api/transcribe`, { method: 'POST', timeout: 2000 });
+    return probe.status === 422; // FastAPI validation error = whisper is up
+  } catch {
+    return false;
+  }
+}
+
+async function ensureWhisper() {
+  if (await isWhisperHealthy()) return;
+  await killPort8001();
   startWhisper();
   await waitForWhisper();
 }
