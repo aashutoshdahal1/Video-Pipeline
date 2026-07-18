@@ -9,9 +9,9 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '/api':       BACKEND,
-        '/uploads':   BACKEND,
-        '/socket.io': { target: BACKEND, ws: true },
+        '/api':       { target: BACKEND, changeOrigin: true },
+        '/uploads':   { target: BACKEND, changeOrigin: true },
+        '/socket.io': { target: BACKEND, changeOrigin: true, ws: true },
       },
     },
   };

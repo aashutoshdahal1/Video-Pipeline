@@ -59,6 +59,14 @@ if (!fs.existsSync(envDst) && fs.existsSync(envSrc)) {
   console.log('Created server/.env from .env.example');
 }
 
+// ── Sync client/.env BACKEND_PORT to whatever PORT this process has ────────
+// DevHub injects PORT into the environment of start.js; the backend inherits
+// it. Write it into client/.env so Vite's proxy always targets the right port.
+const backendPort = process.env.PORT || 6000;
+const clientEnvPath = path.join(ROOT, 'client', '.env');
+fs.writeFileSync(clientEnvPath, `BACKEND_PORT=${backendPort}\n`);
+console.log(`client/.env → BACKEND_PORT=${backendPort}`);
+
 // ── Spawn helper ───────────────────────────────────────────────────────────
 const procs = [];
 
