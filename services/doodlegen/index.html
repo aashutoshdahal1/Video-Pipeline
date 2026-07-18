@@ -1,0 +1,3388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoodleGen - AI Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:       #080810;
+            --surface:  #0f0f1a;
+            --card:     #13131f;
+            --border:   rgba(255,255,255,0.07);
+            --primary:  #7c3aed;
+            --primary2: #a855f7;
+            --accent:   #06b6d4;
+            --text:     #f1f1f5;
+            --muted:    #6b7280;
+            --success:  #10b981;
+            --warning:  #f59e0b;
+            --error:    #ef4444;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        h1,h2,h3,.heading { font-family: 'Space Grotesk', sans-serif; }
+
+        /* NAV */
+        .studio-nav { position:sticky; top:0; z-index:50; background:rgba(8,8,16,0.7); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid var(--border); }
+
+        /* CARD */
+        .studio-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:28px; }
+
+        /* TAB BUTTONS */
+        .tab-btn { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; padding:8px 18px; border-radius:999px; border:1px solid transparent; cursor:pointer; color:var(--muted); background:transparent; transition:all 0.2s; letter-spacing:0.02em; }
+        .tab-btn:hover:not(.active) { color:var(--text); background:rgba(124,58,237,0.12); border-color:rgba(124,58,237,0.3); }
+        .tab-btn.active { color:#fff; background:linear-gradient(135deg,var(--primary),var(--primary2)); border-color:transparent; box-shadow:0 0 20px rgba(124,58,237,0.45); }
+
+        /* SECTION LABEL */
+        .section-label { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; display:block; }
+
+        /* TEMPLATE CHIPS */
+        .tmpl-btn { font-size:12px; font-weight:500; padding:5px 14px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,0.04); color:var(--muted); cursor:pointer; transition:all 0.18s; }
+        .tmpl-btn:hover { background:rgba(124,58,237,0.18); border-color:rgba(124,58,237,0.5); color:var(--primary2); }
+
+        /* INPUTS */
+        textarea, select, input[type="text"], input[type="password"] { font-family:'Inter',sans-serif; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; color:var(--text); width:100%; padding:12px 14px; font-size:14px; transition:border-color 0.2s,box-shadow 0.2s; outline:none; -webkit-appearance:none; }
+        textarea { resize:vertical; min-height:120px; }
+        #img-prompt, #bulk-prompts { padding:16px 18px; }
+        textarea:focus, select:focus, input[type="text"]:focus, input[type="password"]:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(124,58,237,0.2); }
+        select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:36px; cursor:pointer; }
+        select option { background:#1a1a2e; }
+
+        /* FILE UPLOAD */
+        .upload-zone { border:1px dashed rgba(124,58,237,0.4); border-radius:12px; background:rgba(124,58,237,0.04); padding:18px; transition:border-color 0.2s,background 0.2s; }
+        .upload-zone:hover { border-color:rgba(124,58,237,0.7); background:rgba(124,58,237,0.08); }
+        .upload-zone input[type="file"] { background:transparent; border:none; padding:0; font-size:13px; color:var(--muted); box-shadow:none; }
+        .upload-zone input[type="file"]:focus { box-shadow:none; border-color:transparent; }
+
+        /* GENERATE BUTTON */
+        .btn-generate { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:700; width:100%; padding:16px 24px; border-radius:12px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; letter-spacing:0.03em; box-shadow:0 4px 24px rgba(124,58,237,0.4); transition:transform 0.15s,box-shadow 0.15s; display:flex; align-items:center; justify-content:center; gap:10px; }
+        .btn-generate:hover { transform:translateY(-2px); box-shadow:0 8px 32px rgba(124,58,237,0.55); }
+        .btn-generate:active { transform:translateY(0); }
+
+        /* SECONDARY BUTTON */
+        .btn-secondary { font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; padding:10px 18px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text); cursor:pointer; transition:all 0.18s; display:flex; align-items:center; justify-content:center; gap:8px; }
+        .btn-secondary:hover { background:rgba(255,255,255,0.09); border-color:rgba(255,255,255,0.15); }
+
+        /* KEY TAGS */
+        .key-tag { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:999px; padding:3px 10px; font-size:11px; font-family:monospace; color:var(--muted); }
+        .key-tag.active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.35); color:var(--success); }
+        .key-tag.failed { background:rgba(239,68,68,0.12); border-color:rgba(239,68,68,0.35); color:var(--error); }
+
+        /* AUTH PILL */
+        .status-pill { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:999px; font-size:12px; font-weight:600; border:1px solid; }
+        .status-pill.ready        { background:rgba(16,185,129,0.12);  border-color:rgba(16,185,129,0.4);  color:#34d399; }
+        .status-pill.refreshing   { background:rgba(245,158,11,0.12);  border-color:rgba(245,158,11,0.4);  color:#fbbf24; }
+        .status-pill.error        { background:rgba(239,68,68,0.12);   border-color:rgba(239,68,68,0.4);   color:#f87171; }
+        .status-pill.login_needed { background:rgba(249,115,22,0.12);  border-color:rgba(249,115,22,0.4);  color:#fb923c; }
+        .status-pill.idle         { background:rgba(107,114,128,0.12); border-color:rgba(107,114,128,0.3); color:var(--muted); }
+        .pulse-dot { width:7px; height:7px; border-radius:50%; background:currentColor; animation:pulse-dot 2s ease-in-out infinite; }
+        @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }
+
+        /* IMAGE GRID */
+        .img-thumb-wrap { position:relative; border-radius:12px; overflow:hidden; cursor:pointer; border:2px solid transparent; transition:border-color 0.2s,transform 0.2s; }
+        .img-thumb-wrap:hover { transform:scale(1.015); }
+        .img-thumb-wrap.selected { border-color:var(--primary2); box-shadow:0 0 0 3px rgba(168,85,247,0.3); }
+        .img-thumb-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); opacity:0; transition:opacity 0.18s; display:flex; align-items:center; justify-content:center; }
+        .img-thumb-wrap:hover .img-thumb-overlay { opacity:1; }
+
+        /* EMPTY STATE */
+        .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; text-align:center; padding:48px 24px; }
+        .empty-icon { font-size:52px; background:linear-gradient(135deg,var(--primary),var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; margin-bottom:16px; line-height:1; }
+
+        /* LOADING RING */
+        .loading-ring { width:56px; height:56px; border-radius:50%; border:3px solid rgba(255,255,255,0.05); border-top-color:var(--primary2); animation:spin 0.9s linear infinite; margin:0 auto 20px; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        /* SKELETON */
+        .skeleton { background:linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.05) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+        @keyframes shimmer { to { background-position:-200% 0; } }
+
+        /* ── IMAGE GENERATING ANIMATION ── */
+        .img-gen-panel { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:0; overflow:hidden; }
+
+        /* Orb */
+        .gen-orb { position:relative; width:96px; height:96px; margin-bottom:28px; }
+        .gen-orb-ring { position:absolute; inset:0; border-radius:50%; border:2px solid transparent; animation:orb-spin 2.4s linear infinite; }
+        .gen-orb-ring:nth-child(1) { border-top-color:var(--primary2); border-right-color:rgba(168,85,247,0.3); animation-duration:2.4s; }
+        .gen-orb-ring:nth-child(2) { inset:10px; border-bottom-color:var(--accent); border-left-color:rgba(6,182,212,0.3); animation-duration:1.8s; animation-direction:reverse; }
+        .gen-orb-ring:nth-child(3) { inset:22px; border-top-color:rgba(255,255,255,0.4); animation-duration:1.2s; }
+        .gen-orb-core { position:absolute; inset:34px; border-radius:50%; background:radial-gradient(circle at 40% 40%,var(--primary2),var(--primary)); box-shadow:0 0 24px rgba(168,85,247,0.8),0 0 48px rgba(124,58,237,0.4); animation:core-pulse 1.6s ease-in-out infinite; }
+        @keyframes orb-spin { to { transform:rotate(360deg); } }
+        @keyframes core-pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.18);opacity:0.8} }
+
+        /* Floating particles */
+        .gen-particles { position:absolute; inset:0; pointer-events:none; }
+        .gen-particle { position:absolute; width:4px; height:4px; border-radius:50%; background:var(--primary2); opacity:0; animation:particle-float 3s ease-in-out infinite; }
+        .gen-particle:nth-child(1) { left:20%; top:30%; animation-delay:0s;    background:#a855f7; }
+        .gen-particle:nth-child(2) { left:75%; top:20%; animation-delay:0.5s;  background:#06b6d4; width:3px; height:3px; }
+        .gen-particle:nth-child(3) { left:55%; top:65%; animation-delay:1s;    background:#a855f7; width:5px; height:5px; }
+        .gen-particle:nth-child(4) { left:30%; top:70%; animation-delay:1.5s;  background:#06b6d4; }
+        .gen-particle:nth-child(5) { left:80%; top:55%; animation-delay:2s;    background:#fff; width:3px; height:3px; }
+        .gen-particle:nth-child(6) { left:10%; top:50%; animation-delay:2.5s;  background:#a855f7; }
+        @keyframes particle-float {
+            0%   { opacity:0; transform:translateY(0) scale(0.5); }
+            20%  { opacity:1; }
+            80%  { opacity:0.6; }
+            100% { opacity:0; transform:translateY(-32px) scale(1.2); }
+        }
+
+        /* Pixel grid shimmer cards */
+        .gen-cards { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:280px; margin-top:8px; }
+        .gen-card { border-radius:12px; overflow:hidden; position:relative; }
+        .gen-card-inner { width:100%; aspect-ratio:16/9; background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(6,182,212,0.08)); border:1px solid rgba(124,58,237,0.2); border-radius:12px; overflow:hidden; }
+        .gen-card-shimmer { position:absolute; inset:0; background:linear-gradient(105deg,transparent 35%,rgba(168,85,247,0.25) 50%,transparent 65%); background-size:200% 100%; animation:card-sweep 1.8s ease-in-out infinite; border-radius:12px; animation-delay:calc(var(--card-i, 0) * 0.3s); }
+        .gen-card:nth-child(1)  .gen-card-shimmer { --card-i:0; }
+        .gen-card:nth-child(2)  .gen-card-shimmer { --card-i:1; }
+        .gen-card:nth-child(3)  .gen-card-shimmer { --card-i:2; }
+        .gen-card:nth-child(4)  .gen-card-shimmer { --card-i:3; }
+        .gen-card:nth-child(5)  .gen-card-shimmer { --card-i:4; }
+        .gen-card:nth-child(6)  .gen-card-shimmer { --card-i:5; }
+        .gen-card:nth-child(7)  .gen-card-shimmer { --card-i:6; }
+        .gen-card:nth-child(8)  .gen-card-shimmer { --card-i:7; }
+        .gen-card:nth-child(9)  .gen-card-shimmer { --card-i:8; }
+        .gen-card:nth-child(10) .gen-card-shimmer { --card-i:9; }
+        .gen-card:nth-child(11) .gen-card-shimmer { --card-i:10; }
+        .gen-card:nth-child(12) .gen-card-shimmer { --card-i:11; }
+        @keyframes card-sweep { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+        /* Step dots */
+        .gen-steps { display:flex; gap:6px; margin-top:18px; }
+        .gen-step-dot { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,0.12); transition:all 0.4s; }
+        .gen-step-dot.active { background:var(--primary2); box-shadow:0 0 8px rgba(168,85,247,0.7); transform:scale(1.4); }
+        .gen-step-dot.done   { background:var(--success); }
+
+        /* Gen status text */
+        .gen-status-text { font-size:13px; font-weight:600; color:var(--text); margin-top:16px; letter-spacing:0.01em; }
+        .gen-sub-text { font-size:11px; color:var(--muted); margin-top:4px; }
+
+        /* ── LEFT PANEL REDESIGN ── */
+        .gen-header { display:flex; align-items:center; gap:10px; margin-bottom:2px; }
+        .gen-header-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--primary),var(--primary2)); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; box-shadow:0 4px 12px rgba(124,58,237,0.4); }
+        .gen-header-title { font-size:18px; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+        .gen-header-badge { font-size:10px; font-weight:600; padding:2px 8px; border-radius:999px; background:rgba(6,182,212,0.12); border:1px solid rgba(6,182,212,0.25); color:var(--accent); letter-spacing:0.04em; }
+
+        .tmpl-row { display:flex; flex-wrap:wrap; gap:5px; }
+
+        .prompt-wrap { position:relative; }
+        .prompt-char-count { position:absolute; bottom:10px; right:12px; font-size:10px; color:var(--muted); pointer-events:none; font-family:monospace; }
+
+        .controls-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .control-group label.section-label { margin-bottom:6px; }
+
+        .ref-zone { border:1px dashed rgba(124,58,237,0.35); border-radius:12px; background:rgba(124,58,237,0.04); padding:14px 16px; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; gap:12px; }
+        .ref-zone:hover { border-color:rgba(124,58,237,0.65); background:rgba(124,58,237,0.08); }
+        .ref-zone-icon { width:32px; height:32px; border-radius:8px; background:rgba(124,58,237,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .ref-zone input[type="file"] { display:none; }
+
+        .action-row { display:flex; gap:8px; align-items:stretch; margin-top:auto; padding-top:4px; }
+        .btn-generate-new { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:700; flex:1; padding:14px 20px; border-radius:12px; border:none; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; letter-spacing:0.02em; box-shadow:0 4px 20px rgba(124,58,237,0.45); transition:transform 0.15s,box-shadow 0.15s,opacity 0.15s; display:flex; align-items:center; justify-content:center; gap:9px; }
+        .btn-generate-new:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(124,58,237,0.6); }
+        .btn-generate-new:active { transform:translateY(0); }
+        .btn-generate-new:disabled { opacity:0.55; cursor:not-allowed; transform:none; }
+        .btn-bulk-new { width:44px; height:auto; min-height:46px; border-radius:12px; border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); color:var(--primary2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all 0.18s; flex-shrink:0; }
+        .btn-bulk-new:hover { background:rgba(124,58,237,0.22); border-color:var(--primary2); }
+        .btn-bulk-new.active { background:rgba(124,58,237,0.28); border-color:var(--primary2); box-shadow:0 0 12px rgba(124,58,237,0.3); }
+
+        /* ── BULK ACCOUNTS ── */
+        .acct-chip { display:flex; align-items:center; gap:7px; padding:7px 10px 7px 8px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.03); transition:border-color 0.18s,background 0.18s; }
+        .acct-chip:hover { border-color:rgba(124,58,237,0.35); background:rgba(124,58,237,0.06); }
+        .acct-avatar { width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex-shrink:0; letter-spacing:0; }
+        .acct-status-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+        .acct-status-dot.idle    { background:#6b7280; }
+        .acct-status-dot.ready   { background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.6); }
+        .acct-status-dot.running { background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.6); animation:pulse-dot 1s ease-in-out infinite; }
+        .acct-status-dot.done    { background:#10b981; }
+        .acct-status-dot.error   { background:#ef4444; }
+        .acct-status-dot.login_needed { background:#ef4444; }
+        .acct-status-dot.logging_in { background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.6); animation:pulse-dot 1s ease-in-out infinite; }
+        .acct-status-dot.refreshing { background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.6); animation:pulse-dot 1s ease-in-out infinite; }
+        .acct-avatar { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+        .acct-add-btn { display:flex; align-items:center; justify-content:center; gap:6px; width:100%; padding:9px; border-radius:10px; border:1px dashed rgba(124,58,237,0.35); background:rgba(124,58,237,0.04); color:var(--primary2); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.18s; font-family:'Space Grotesk',sans-serif; }
+        .acct-add-btn:hover { border-color:var(--primary2); background:rgba(124,58,237,0.1); }
+        .acct-paste-area { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:12px; font-family:monospace; color:var(--muted); width:100%; resize:none; min-height:64px; transition:border-color 0.2s; outline:none; }
+        .acct-paste-area:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(124,58,237,0.18); }
+        .parallel-badge { display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; background:linear-gradient(135deg,rgba(14,165,233,0.2),rgba(99,102,241,0.2)); border:1px solid rgba(99,102,241,0.35); color:#a5b4fc; letter-spacing:0.04em; }
+        /* Token badge in header */
+        .token-badge { display:inline-flex; align-items:center; gap:5px; font-size:10px; font-weight:600; padding:3px 9px; border-radius:999px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25); color:#34d399; letter-spacing:0.03em; }
+
+        /* VIDEO JOB CARDS */
+        .job-card { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; border-left:4px solid var(--muted); padding:14px 16px; display:flex; align-items:center; gap:14px; }
+        .job-card.pending { border-left-color:var(--warning); }
+        .job-card.done    { border-left-color:var(--success); }
+        .job-card.failed  { border-left-color:var(--error); }
+        .job-status { font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px; letter-spacing:0.06em; text-transform:uppercase; flex-shrink:0; }
+        .job-status.pending { background:rgba(245,158,11,0.15); color:#fbbf24; }
+        .job-status.done    { background:rgba(16,185,129,0.15); color:#34d399; }
+        .job-status.failed  { background:rgba(239,68,68,0.15);  color:#f87171; }
+        .progress-bar-track { height:3px; background:rgba(255,255,255,0.07); border-radius:99px; margin-top:6px; overflow:hidden; }
+        .progress-bar-fill  { height:100%; width:45%; background:linear-gradient(90deg,var(--primary),var(--primary2)); border-radius:99px; animation:progress-slide 2s ease-in-out infinite alternate; }
+        @keyframes progress-slide { from{margin-left:0} to{margin-left:55%} }
+
+        /* VOICE BUTTONS */
+        .voice-btn { font-size:12px; font-weight:500; padding:6px 14px; border-radius:999px; border:1px solid var(--border); background:rgba(255,255,255,0.04); color:var(--muted); cursor:pointer; transition:all 0.18s; }
+        .voice-btn:hover { border-color:rgba(6,182,212,0.5); color:var(--accent); }
+        .voice-btn.selected { background:rgba(6,182,212,0.15); border-color:rgba(6,182,212,0.6); color:var(--accent); }
+        audio { width:100%; border-radius:8px; filter:invert(1) hue-rotate(180deg); }
+
+        /* GALLERY */
+        .gallery-masonry { columns:1; column-gap:20px; }
+        @media(min-width:640px)  { .gallery-masonry { columns:2; } }
+        @media(min-width:1024px) { .gallery-masonry { columns:3; } }
+        .gallery-item { break-inside:avoid; margin-bottom:20px; border-radius:14px; overflow:hidden; border:1px solid var(--border); background:var(--card); }
+
+        /* MODAL */
+        .studio-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; z-index:100; }
+        .studio-modal { background:var(--card); border:1px solid rgba(255,255,255,0.1); border-radius:20px; max-width:520px; width:calc(100% - 32px); padding:32px; max-height:90vh; overflow-y:auto; }
+        .modal-section { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; }
+        .modal-section-title { font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+
+        /* VIDEO MODE TOGGLE */
+        .mode-toggle { display:flex; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:10px; padding:4px; gap:4px; }
+        .mode-toggle label { flex:1; text-align:center; padding:8px 12px; border-radius:8px; font-size:13px; font-weight:600; color:var(--muted); cursor:pointer; transition:all 0.18s; user-select:none; }
+        .mode-toggle input[type="radio"] { display:none; }
+        .mode-toggle input[type="radio"]:checked + label { background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; box-shadow:0 2px 12px rgba(124,58,237,0.35); }
+
+        /* TOAST */
+        /* ── TOAST SYSTEM ── */
+        #toast-container { pointer-events:none; }
+        .toast { display:flex; align-items:center; gap:10px; padding:12px 18px; border-radius:12px; font-size:14px; font-weight:500; color:#fff; max-width:360px; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); animation:toast-in 0.3s cubic-bezier(0.22,1,0.36,1), toast-out 0.35s ease 4.65s forwards; box-shadow:0 8px 32px rgba(0,0,0,0.5),0 1px 0 rgba(255,255,255,0.06) inset; }
+        .toast.info    { background:rgba(6,182,212,0.88);    border:1px solid rgba(6,182,212,0.45); }
+        .toast.success { background:rgba(16,185,129,0.88);   border:1px solid rgba(16,185,129,0.45); }
+        .toast.error   { background:rgba(239,68,68,0.88);    border:1px solid rgba(239,68,68,0.45); }
+        @keyframes toast-in  { from{opacity:0;transform:translateX(24px) scale(0.96)} to{opacity:1;transform:translateX(0) scale(1)} }
+        @keyframes toast-out { from{opacity:1;transform:translateX(0) scale(1)} to{opacity:0;transform:translateX(24px) scale(0.94)} }
+
+        /* ── PRO SAVE NOTIFICATION ── */
+        .save-notif { pointer-events:all; display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border-radius:16px; max-width:380px; background:rgba(13,13,22,0.92); border:1px solid rgba(255,255,255,0.08); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); box-shadow:0 16px 48px rgba(0,0,0,0.6),0 1px 0 rgba(255,255,255,0.07) inset; animation:toast-in 0.35s cubic-bezier(0.22,1,0.36,1), toast-out 0.35s ease 4.65s forwards; }
+        .save-notif-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#10b981,#059669); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 12px rgba(16,185,129,0.4); }
+        .save-notif-body { flex:1; min-width:0; }
+        .save-notif-title { font-size:13px; font-weight:700; color:#f1f1f5; letter-spacing:0.01em; margin-bottom:3px; }
+        .save-notif-path { font-size:11px; color:rgba(255,255,255,0.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:monospace; }
+        .save-notif-folder { font-size:11px; color:#34d399; font-weight:600; margin-top:5px; display:flex; align-items:center; gap:4px; }
+        .save-notif-close { background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; font-size:14px; padding:2px; flex-shrink:0; line-height:1; transition:color 0.15s; pointer-events:all; }
+        .save-notif-close:hover { color:rgba(255,255,255,0.7); }
+        .save-notif-bar { height:2px; background:rgba(255,255,255,0.07); border-radius:99px; margin-top:10px; overflow:hidden; }
+        .save-notif-bar-fill { height:100%; background:linear-gradient(90deg,#10b981,#06b6d4); border-radius:99px; animation:save-bar 5s linear forwards; }
+        @keyframes save-bar { from{width:100%} to{width:0%} }
+
+        /* AUTH BANNER */
+        #auth-banner { background:linear-gradient(90deg,rgba(124,58,237,0.2),rgba(6,182,212,0.15)); border-bottom:1px solid rgba(124,58,237,0.3); }
+
+        /* SETUP */
+        .setup-step-num { width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        code { background:rgba(255,255,255,0.07); border-radius:5px; padding:2px 7px; font-size:12px; font-family:monospace; color:var(--accent); }
+        pre  { background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:10px; padding:14px; font-size:12px; overflow-x:auto; color:#a5f3fc; }
+
+        /* BOOKMARKLET */
+        .btn-bookmarklet { display:inline-flex; align-items:center; gap:8px; background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; font-size:13px; font-weight:700; padding:10px 18px; border-radius:10px; text-decoration:none; border:1px solid rgba(59,130,246,0.5); transition:transform 0.15s,box-shadow 0.15s; box-shadow:0 4px 16px rgba(29,78,216,0.4); }
+        .btn-bookmarklet:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,78,216,0.5); }
+
+        /* MISC */
+        .divider { height:1px; background:var(--border); margin:20px 0; }
+        .info-box    { background:rgba(6,182,212,0.07);  border:1px solid rgba(6,182,212,0.2);  border-radius:10px; padding:12px 14px; font-size:13px; color:#67e8f9; }
+        .warning-box { background:rgba(245,158,11,0.07); border:1px solid rgba(245,158,11,0.2); border-radius:10px; padding:12px 14px; font-size:13px; color:#fcd34d; }
+
+        /* COLLAPSIBLE CARDS */
+        .collapsible-card { }
+        .card-header { }
+        .collapsible-card.is-open .card-header { border-bottom:1px solid var(--border); padding-bottom:14px; margin-bottom:16px; }
+        .card-body { display:flex; flex-direction:column; gap:16px; }
+        .card-body.collapsed { display:none; }
+        .collapse-chevron { width:26px;height:26px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:11px;transition:transform 0.25s,background 0.18s; }
+        .collapse-chevron:hover { background:rgba(255,255,255,0.09); }
+        .collapsible-card:not(.is-open) .collapse-chevron { transform:rotate(180deg); }
+
+        /* IMAGE RESULTS PANEL */
+        #img-results { scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
+        #img-results::-webkit-scrollbar { width:5px; }
+        #img-results::-webkit-scrollbar-track { background:transparent; }
+        #img-results::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:99px; }
+        .img-batch { margin-bottom:18px; min-width:0; overflow:hidden; }
+        .img-batch:first-child { animation:batch-in 0.35s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes batch-in { from{opacity:0;transform:translateY(-10px)} to{opacity:1;transform:translateY(0)} }
+
+        /* BULK QUEUE */
+        .bulk-toggle-btn { font-size:12px; font-weight:600; padding:5px 14px; border-radius:999px; border:1px solid rgba(124,58,237,0.4); background:rgba(124,58,237,0.1); color:var(--primary2); cursor:pointer; transition:all 0.18s; display:inline-flex; align-items:center; gap:6px; }
+        .bulk-toggle-btn:hover { background:rgba(124,58,237,0.2); }
+        .bulk-toggle-btn.active { background:rgba(124,58,237,0.25); border-color:var(--primary2); }
+        .bq-item { display:flex; align-items:flex-start; gap:10px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.02); margin-bottom:6px; transition:border-color 0.2s; }
+        .bq-item.bq-running { border-left:3px solid var(--warning); background:rgba(245,158,11,0.05); }
+        .bq-item.bq-done    { border-left:3px solid var(--success); background:rgba(16,185,129,0.05); }
+        .bq-item.bq-error   { border-left:3px solid var(--error);   background:rgba(239,68,68,0.05); }
+        .bq-item.bq-pending { border-left:3px solid rgba(255,255,255,0.1); }
+        .bq-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:999px; letter-spacing:0.06em; text-transform:uppercase; flex-shrink:0; margin-top:2px; }
+        .bq-badge.bq-pending { background:rgba(107,114,128,0.2); color:var(--muted); }
+        .bq-badge.bq-running { background:rgba(245,158,11,0.2);  color:#fbbf24; }
+        .bq-badge.bq-done    { background:rgba(16,185,129,0.2);  color:#34d399; }
+        .bq-badge.bq-error   { background:rgba(239,68,68,0.2);   color:#f87171; }
+        .bq-progress { height:2px; width:100%; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; margin-top:6px; }
+        .bq-progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--primary2)); border-radius:99px; animation:progress-slide 1.4s ease-in-out infinite alternate; }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="studio-nav">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3 flex-shrink-0">
+            <span style="font-size:20px">✨</span>
+            <span class="heading text-xl font-bold"
+                  style="background:linear-gradient(135deg,#a855f7,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">
+                DoodleGen
+            </span>
+        </div>
+        <div class="flex flex-wrap gap-1 justify-center">
+            <button class="tab-btn active" onclick="showTab('image')">Image</button>
+            <button class="tab-btn" onclick="showTab('video')">Video</button>
+            <button class="tab-btn" onclick="showTab('voice')">Voice</button>
+            <button class="tab-btn" onclick="showTab('gallery')">Gallery</button>
+            <button class="tab-btn" onclick="showTab('setup')">Setup</button>
+        </div>
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <div id="auth-pill" class="hidden"></div>
+            <button onclick="showApiModal()"
+                    style="display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:var(--text);cursor:pointer;transition:background 0.18s">
+                <i class="fas fa-key" style="font-size:11px;color:var(--primary2)"></i>
+                Tokens <span id="token-count" style="color:var(--muted)">(0)</span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- Auth banner -->
+<div id="auth-banner" class="hidden px-4 py-3 text-center text-sm" style="color:rgba(255,255,255,0.85)">
+    <strong>Sign in with Google</strong> for automatic token refresh — no more manual pasting.
+    <button onclick="triggerLogin()" style="margin-left:12px;text-decoration:underline;font-weight:700;color:var(--accent);background:none;border:none;cursor:pointer">Sign In</button>
+    <button onclick="document.getElementById('auth-banner').classList.add('hidden')" style="margin-left:12px;opacity:0.6;background:none;border:none;cursor:pointer;color:inherit">✕</button>
+</div>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+<!-- ════ IMAGE TAB ════ -->
+<div id="tab-image" class="tab-panel">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
+        <!-- ── LEFT COLUMN: two stacked cards ── -->
+        <div class="lg:col-span-2 flex flex-col gap-4">
+
+            <!-- SECTION 1: Single Generate -->
+            <div class="studio-card collapsible-card" id="card-single">
+                <!-- Header -->
+                <div class="card-header" onclick="toggleCard('card-single')" style="display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none">
+                    <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--primary2));display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 3px 10px rgba(124,58,237,0.4)">✨</div>
+                    <div style="flex:1;min-width:0">
+                        <div style="font-size:15px;font-weight:700;font-family:'Space Grotesk',sans-serif">Generate Image</div>
+                        <div style="font-size:10px;color:var(--muted);margin-top:1px;display:flex;align-items:center;gap:5px">
+                            <span style="width:5px;height:5px;border-radius:50%;background:var(--success);display:inline-block"></span>
+                            Google Flow API
+                        </div>
+                    </div>
+                    <div class="collapse-chevron" id="chevron-card-single">
+                        <i class="fas fa-chevron-up"></i>
+                    </div>
+                </div>
+                <div class="card-body" id="body-card-single">
+
+                <!-- Style chips -->
+                <div>
+                    <span class="section-label">Quick Style</span>
+                    <div class="tmpl-row">
+                        <button class="tmpl-btn" onclick="applyTemplate('doodle')">✏️ Doodle</button>
+                        <button class="tmpl-btn" onclick="applyTemplate('anime')">⭐ Anime</button>
+                        <button class="tmpl-btn" onclick="applyTemplate('cinematic')">🎬 Cinematic</button>
+                        <button class="tmpl-btn" onclick="applyTemplate('realistic')">📷 Realistic</button>
+                        <button class="tmpl-btn" onclick="applyTemplate('product')">📦 Product</button>
+                        <button class="tmpl-btn" onclick="applyTemplate('social')">🖼 Social</button>
+                    </div>
+                </div>
+
+                <!-- Prompt -->
+                <div class="prompt-wrap">
+                    <label class="section-label" for="img-prompt">Prompt</label>
+                    <textarea id="img-prompt" rows="5" placeholder="Describe your image — style, subject, mood, colors…" oninput="updatePromptCount(this)"></textarea>
+                    <span class="prompt-char-count" id="img-char-count">0</span>
+                </div>
+
+                <!-- Ratio + Count -->
+                <div class="controls-row">
+                    <div>
+                        <label class="section-label">Aspect Ratio</label>
+                        <select id="img-aspect">
+                            <option value="16:9">Landscape 16:9</option>
+                            <option value="9:16">Portrait 9:16</option>
+                            <option value="1:1">Square 1:1</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="section-label">Count</label>
+                        <select id="img-count">
+                            <option value="1">1 image</option>
+                            <option value="2">2 images</option>
+                            <option value="3">3 images</option>
+                            <option value="4">4 images</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Reference image -->
+                <div>
+                    <label class="section-label">Reference <span style="text-transform:none;font-weight:400;font-size:11px;letter-spacing:0">(optional)</span></label>
+                    <div class="ref-zone" onclick="document.getElementById('ref-image-input').click()">
+                        <div class="ref-zone-icon"><i class="fas fa-image" style="color:var(--primary2);font-size:13px"></i></div>
+                        <div>
+                            <div style="font-size:13px;font-weight:500;color:var(--text)">Upload reference image</div>
+                            <div style="font-size:11px;color:var(--muted);margin-top:2px">PNG · JPG · WEBP</div>
+                        </div>
+                        <input type="file" id="ref-image-input" accept="image/*" onchange="previewRefImage(this)">
+                    </div>
+                    <div id="ref-image-preview" style="display:none;align-items:center;gap:12px;padding:10px 12px;margin-top:8px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border)">
+                        <img id="ref-thumb" style="height:44px;border-radius:7px;border:1px solid var(--border)" alt="">
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:12px;font-weight:600;color:var(--success)">Ready ✓</div>
+                            <span id="ref-status" style="font-size:11px;color:var(--muted)"></span>
+                        </div>
+                        <button onclick="clearRefImage()" style="color:var(--error);font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0">✕</button>
+                    </div>
+                </div>
+
+                <!-- Save folder (shared) -->
+                <div>
+                    <label class="section-label">Save Folder</label>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <input type="text" id="save-folder" value="AutoLabs_meta" placeholder="AutoLabs_meta"
+                               style="font-size:12px;padding:8px 10px;flex:1">
+                        <button onclick="document.getElementById('save-folder').value='AutoLabs_meta'"
+                                style="font-size:11px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;white-space:nowrap">Reset</button>
+                    </div>
+                    <div style="font-size:10px;color:var(--muted);margin-top:4px">→ <code style="font-size:10px">~/Downloads/AutoLabs_meta</code></div>
+                </div>
+
+                <!-- Generate button -->
+                <button onclick="generateImages()" class="btn-generate-new" id="img-gen-btn">
+                    <i class="fas fa-wand-magic-sparkles"></i> Generate Image
+                </button>
+
+                <div id="img-key-status" class="flex flex-wrap gap-1.5"></div>
+                </div><!-- /card-body -->
+            </div>
+
+            <!-- SECTION 2: Bulk Generation -->
+            <div class="studio-card collapsible-card" id="card-bulk">
+                <!-- Header -->
+                <div class="card-header" onclick="toggleCard('card-bulk')" style="display:flex;align-items:center;cursor:pointer;user-select:none">
+                    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+                        <div style="width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;box-shadow:0 3px 10px rgba(99,102,241,0.4)">⚡</div>
+                        <div style="flex:1;min-width:0">
+                            <div style="font-size:15px;font-weight:700;font-family:'Space Grotesk',sans-serif">Bulk Generation</div>
+                            <div style="font-size:10px;color:var(--muted);margin-top:1px">Paste multiple prompts · one per line</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px">
+                        <button onclick="event.stopPropagation();bulkClearAll()" style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:3px 7px;border-radius:6px;border:1px solid var(--border)">Clear</button>
+                        <button onclick="event.stopPropagation();bulkLoadExample()" style="font-size:11px;color:var(--accent);background:none;border:none;cursor:pointer;padding:3px 7px;border-radius:6px;border:1px solid rgba(6,182,212,0.3)">Example</button>
+                        <div class="collapse-chevron" id="chevron-card-bulk">
+                            <i class="fas fa-chevron-up"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" id="body-card-bulk">
+
+                <!-- ── ACCOUNTS PANEL ── -->
+                <div style="background:rgba(99,102,241,0.05);border:1px solid rgba(99,102,241,0.2);border-radius:14px;padding:14px 14px 10px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Parallel Accounts</span>
+                            <span id="bulk-worker-badge" class="parallel-badge" style="opacity:0.45"><i class="fas fa-bolt" style="font-size:9px"></i><span id="bulk-worker-count">0</span> workers</span>
+                        </div>
+                        <button onclick="addGoogleAccount()" id="bulk-add-acct-btn"
+                                style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;border:1px solid rgba(66,133,244,0.5);background:rgba(66,133,244,0.12);color:#7aadff;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif">
+                            <i class="fab fa-google" style="font-size:10px"></i> Sign in with Google
+                        </button>
+                    </div>
+
+                    <!-- Account chips list -->
+                    <div id="bulk-acct-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px"></div>
+
+                    <!-- Empty hint -->
+                    <div id="bulk-acct-empty" style="font-size:11px;color:var(--muted);text-align:center;padding:6px 0;line-height:1.6">
+                        No extra accounts — using your default token.<br>
+                        <span style="color:rgba(165,180,252,0.7)">Add Google accounts to generate multiple prompts in parallel.</span>
+                    </div>
+
+                </div>
+
+                <!-- ── ASPECT RATIO ── -->
+                <div>
+                    <label class="section-label">Aspect Ratio</label>
+                    <select id="bulk-aspect" style="font-size:12px;padding:8px 10px;width:100%">
+                        <option value="9:16">Portrait 9:16 (Shorts / Reels)</option>
+                        <option value="16:9">Landscape 16:9</option>
+                        <option value="1:1">Square 1:1</option>
+                        <option value="4:5">Portrait 4:5 (Instagram)</option>
+                    </select>
+                </div>
+
+                <!-- ── SAVE FOLDER ── -->
+                <div>
+                    <label class="section-label">Save Folder <span style="text-transform:none;font-weight:400;letter-spacing:0;font-size:11px">(for this batch)</span></label>
+                    <div style="display:flex;gap:6px;align-items:center">
+                        <input type="text" id="bulk-folder" value="AutoLabs_meta" placeholder="AutoLabs_meta"
+                               style="font-size:12px;padding:8px 10px;flex:1">
+                        <button onclick="document.getElementById('bulk-folder').value=document.getElementById('save-folder').value||'AutoLabs_meta'"
+                                style="font-size:11px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--muted);cursor:pointer;white-space:nowrap">Sync</button>
+                    </div>
+                    <div style="font-size:10px;color:var(--muted);margin-top:4px">→ <code id="bulk-folder-preview" style="font-size:10px">~/Downloads/AutoLabs_meta</code></div>
+                </div>
+
+                <!-- ── PROMPTS ── -->
+                <div class="prompt-wrap">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                        <label class="section-label" style="margin-bottom:0">Prompts <span style="text-transform:none;font-weight:400;letter-spacing:0;font-size:11px">(one per line)</span></label>
+                        <div id="bulk-prompt-stats" style="display:none;align-items:center;gap:6px">
+                            <span style="font-size:11px;background:rgba(99,102,241,0.18);border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;padding:2px 9px;border-radius:999px;font-weight:600">
+                                <i class="fas fa-list-ul" style="font-size:9px;margin-right:4px"></i><span id="bulk-prompt-count">0</span> prompts
+                            </span>
+                            <span id="bulk-eta-preview" style="font-size:11px;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399;padding:2px 9px;border-radius:999px;font-weight:600;display:none">
+                                <i class="fas fa-clock" style="font-size:9px;margin-right:4px"></i><span id="bulk-eta-preview-text"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <textarea id="bulk-prompts" rows="7"
+                        placeholder="[05:25] Hand-drawn 2D doodle, bold outlines, a hormone icon with red X, label HUNGER HORMONES CONFUSED&#10;[05:29] Hand-drawn 2D doodle, stick figure looking at plate, label CALORIES YOU DON'T REGISTER&#10;[05:33] …"
+                        style="font-size:12px;line-height:1.7;resize:vertical"
+                        oninput="bulkPromptsChanged()"></textarea>
+                </div>
+
+                <!-- ── RUN / STOP ── -->
+                <div style="display:flex;gap:8px;align-items:stretch">
+                    <button id="bulk-run-btn" onclick="bulkRun()" class="btn-generate-new" style="flex:1">
+                        <i class="fas fa-play" style="font-size:12px"></i> <span id="bulk-run-label">Run Queue</span>
+                    </button>
+                    <button onclick="bulkStop()" id="bulk-stop-btn"
+                            style="display:none;padding:12px 16px;border-radius:12px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:#f87171;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0">
+                        <i class="fas fa-stop"></i>
+                    </button>
+                </div>
+
+                <!-- ── QUEUE LIST ── -->
+                <div id="bulk-queue-wrap" style="display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <span style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Queue <span id="bq-counter" style="color:var(--text)">0/0</span></span>
+                            <span id="bq-parallel-info" style="display:none" class="parallel-badge"><i class="fas fa-bolt" style="font-size:9px"></i><span id="bq-parallel-label"></span></span>
+                        </div>
+                        <span id="bq-eta" style="font-size:11px;color:var(--accent);font-weight:600"></span>
+                    </div>
+                    <div id="bulk-queue-list" style="max-height:220px;overflow-y:auto;padding-right:2px"></div>
+                </div>
+
+                </div><!-- /card-body -->
+            </div>
+
+        </div>
+
+        <!-- ── RIGHT: Results panel ── -->
+        <div class="lg:col-span-3 studio-card flex flex-col" style="min-height:520px;max-height:92vh;overflow:hidden;padding:0">
+
+            <!-- Top bar -->
+            <div style="padding:18px 20px 0;flex-shrink:0">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                    <div style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">Results</div>
+                    <button onclick="clearAllResults()" id="clear-results-btn"
+                            style="display:none;font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:3px 9px;border-radius:6px;border:1px solid var(--border)">
+                        Clear all
+                    </button>
+                </div>
+
+                <!-- Generating banner — always visible in top bar while loading -->
+                <div id="img-loading" style="display:none;margin-bottom:14px">
+                    <div style="background:linear-gradient(135deg,rgba(124,58,237,0.13),rgba(6,182,212,0.07));border:1px solid rgba(124,58,237,0.28);border-radius:14px;padding:14px 16px">
+                        <div style="display:flex;align-items:center;gap:12px">
+                            <!-- spinning orb -->
+                            <div style="position:relative;width:40px;height:40px;flex-shrink:0">
+                                <div style="position:absolute;inset:0;border-radius:50%;border:2px solid transparent;border-top-color:var(--primary2);animation:orb-spin 1.6s linear infinite"></div>
+                                <div style="position:absolute;inset:7px;border-radius:50%;border:1.5px solid transparent;border-bottom-color:var(--accent);animation:orb-spin 1.1s linear infinite reverse"></div>
+                                <div style="position:absolute;inset:15px;border-radius:50%;background:radial-gradient(circle at 40% 40%,var(--primary2),var(--primary));box-shadow:0 0 10px rgba(168,85,247,0.7);animation:core-pulse 1.3s ease-in-out infinite"></div>
+                            </div>
+                            <div style="flex:1;min-width:0">
+                                <div style="font-size:13px;font-weight:600;color:var(--text)" id="img-loading-msg">Generating your image…</div>
+                                <div style="font-size:11px;color:var(--muted);margin-top:2px" id="img-loading-sub">Talking to Google Flow API</div>
+                                <div style="height:2px;background:rgba(255,255,255,0.07);border-radius:99px;margin-top:8px;overflow:hidden">
+                                    <div style="height:100%;width:35%;background:linear-gradient(90deg,var(--primary),var(--primary2),var(--accent));border-radius:99px;animation:progress-slide 1.5s ease-in-out infinite alternate"></div>
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+                                <div class="gen-step-dot active" id="gstep-0"></div>
+                                <div class="gen-step-dot" id="gstep-1"></div>
+                                <div class="gen-step-dot" id="gstep-2"></div>
+                                <div class="gen-step-dot" id="gstep-3"></div>
+                            </div>
+                        </div>
+                        <!-- shimmer placeholder cards — count set dynamically by showImgLoading() -->
+                        <div class="gen-cards" id="gen-skeleton-grid" style="margin-top:10px">
+                            <div class="gen-card"><div class="gen-card-inner"></div><div class="gen-card-shimmer"></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="img-empty" class="empty-state flex-1" style="padding:48px 20px">
+                <div class="empty-icon">🎨</div>
+                <p class="heading text-lg font-semibold">Your images appear here</p>
+                <p style="font-size:14px;color:var(--muted);margin-top:8px">Enter a prompt above and click Generate</p>
+            </div>
+
+            <!-- Scrollable results -->
+            <div id="img-results" style="display:none;flex:1;overflow-y:auto;overflow-x:hidden;padding:0 20px 16px">
+                <div id="img-grid"></div>
+                <div style="display:flex;gap:8px;margin-top:4px;padding-bottom:4px">
+                    <button onclick="generateImages()" class="btn-secondary flex-1">
+                        <i class="fas fa-redo" style="font-size:11px"></i> Regenerate
+                    </button>
+                    <button onclick="upscaleCurrentImage()" id="upscale-btn" class="btn-secondary hidden" style="flex:1">
+                        <i class="fas fa-expand" style="font-size:11px"></i> Upscale
+                    </button>
+                </div>
+                <div id="upscale-opts" class="hidden" style="display:none;gap:8px;margin-top:8px">
+                    <button onclick="upscaleImage('2k')" class="btn-secondary flex-1" style="color:var(--accent)">2K</button>
+                    <button onclick="upscaleImage('4k')" class="btn-secondary flex-1" style="color:var(--primary2)">4K</button>
+                    <button onclick="document.getElementById('upscale-opts').classList.add('hidden');document.getElementById('upscale-opts').style.display='none'" class="btn-secondary" style="padding:10px 14px">✕</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ════ VIDEO TAB ════ -->
+<div id="tab-video" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <div class="lg:col-span-2 studio-card flex flex-col gap-5">
+            <div>
+                <h2 class="heading text-xl font-bold mb-1">Generate Video</h2>
+                <p class="text-xs" style="color:var(--muted)" id="vid-backend-desc">Vibes.ai · direct API · fast generation</p>
+            </div>
+
+            <!-- Backend toggle -->
+            <div>
+                <span class="section-label">Backend</span>
+                <div class="mode-toggle" style="flex-wrap:wrap;gap:4px">
+                    <input type="radio" name="vid-backend" id="backend-vibes" value="vibes" checked onchange="onVidBackendChange()">
+                    <label for="backend-vibes">Vibes.ai</label>
+                    <input type="radio" name="vid-backend" id="backend-veo-free" value="veo-free" onchange="onVidBackendChange()">
+                    <label for="backend-veo-free">Veo AI Free</label>
+                </div>
+            </div>
+
+            <!-- Veo AI Free section (hidden by default) -->
+            <div id="veo-free-section" style="display:none">
+                <div class="info-box" style="display:flex;align-items:flex-start;gap:8px;font-size:12px;border-color:rgba(34,197,94,0.3);background:rgba(34,197,94,0.06);margin-bottom:12px">
+                    <i class="fas fa-infinity" style="margin-top:2px;flex-shrink:0;color:#22c55e"></i>
+                    <span>Uses veoaifree.com — <strong style="color:#22c55e">no login required</strong>. Limit: 2 videos per IP — add proxies below for unlimited.</span>
+                </div>
+
+                <!-- Cloudflare Worker URLs -->
+                <div style="margin-bottom:10px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                        <span class="section-label" style="margin-bottom:0">Cloudflare Worker URLs <span id="veo-worker-count" style="font-weight:400;color:var(--muted)"></span></span>
+                        <button onclick="veoWorkerSave()" style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#22c55e;cursor:pointer;font-family:inherit">Save</button>
+                    </div>
+                    <textarea id="veo-worker-url" rows="3" placeholder="One worker URL per line:&#10;https://worker1.yourname.workers.dev&#10;https://worker2.yourname.workers.dev"
+                        style="width:100%;font-size:11px;font-family:monospace;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);resize:vertical;box-sizing:border-box"></textarea>
+                    <p style="font-size:10px;color:var(--muted);margin-top:4px">
+                        Each worker = different CF edge IP. Deploy same <code style="background:rgba(255,255,255,0.07);padding:1px 4px;border-radius:3px">veo-worker.js</code> multiple times with different names for more IPs.
+                        Free tier: unlimited workers, 100k req/day each.
+                    </p>
+                </div>
+
+                <!-- Proxy list (fallback) -->
+                <div style="margin-bottom:10px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                        <span class="section-label" style="margin-bottom:0">Proxies (fallback) <span id="veo-proxy-count" style="font-weight:400;color:var(--muted)"></span></span>
+                        <div style="display:flex;gap:6px">
+                            <button onclick="veoProxySave()" style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.1);color:#22c55e;cursor:pointer;font-family:inherit">Save</button>
+                            <button onclick="veoProxyClear()" style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card-bg);color:var(--muted);cursor:pointer;font-family:inherit">Clear</button>
+                        </div>
+                    </div>
+                    <textarea id="veo-proxy-list" rows="4" placeholder="One proxy per line, e.g.&#10;http://host:port&#10;http://user:pass@host:port"
+                        style="width:100%;font-size:11px;font-family:monospace;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);resize:vertical;box-sizing:border-box"></textarea>
+                </div>
+
+                <p id="veo-free-proxy-status" style="font-size:11px;color:var(--muted);margin-bottom:4px">Checking proxy config…</p>
+            </div>
+
+            <!-- Vibes.ai section (shown by default) -->
+            <div id="vibes-section">
+            <div id="vibes-info" class="info-box" style="display:flex;align-items:flex-start;gap:8px;font-size:12px;border-color:rgba(234,179,8,0.3);background:rgba(234,179,8,0.06)"
+                <i class="fas fa-bolt" style="margin-top:2px;flex-shrink:0;color:#eab308"></i>
+                <span>Uses Vibes.ai API directly. Fast, no browser needed. Requires <code style="font-size:11px;background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px">vibes-cookies.json</code> in the DoodleGen folder.</span>
+            </div>
+
+            <!-- Vibes Accounts Panel -->
+            <div id="vibes-accounts-panel" style="background:rgba(234,179,8,0.05);border:1px solid rgba(234,179,8,0.2);border-radius:14px;padding:14px 14px 10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <span style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">Vibes Accounts</span>
+                        <span id="vibes-acct-badge" style="display:none;font-size:10px;font-weight:700;background:rgba(234,179,8,0.15);color:#eab308;border:1px solid rgba(234,179,8,0.3);padding:2px 8px;border-radius:99px"><i class="fas fa-bolt" style="font-size:9px"></i> <span id="vibes-acct-count">0</span> ready</span>
+                    </div>
+                    <button onclick="addVibesAccount()" id="vibes-add-acct-btn"
+                            style="font-size:11px;font-weight:600;padding:5px 12px;border-radius:8px;border:1px solid rgba(234,179,8,0.4);background:rgba(234,179,8,0.1);color:#eab308;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:'Space Grotesk',sans-serif">
+                        <i class="fab fa-meta" style="font-size:10px"></i> Sign in with Meta
+                    </button>
+                </div>
+                <div id="vibes-acct-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:4px"></div>
+                <p style="font-size:10px;color:var(--muted);margin-top:6px">Generation auto-distributes across all ready accounts.</p>
+            </div>
+
+
+            <div id="vibes-cookies-row">
+                <span class="section-label">Vibes Cookies File</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <select id="vibes-cookies-select" style="flex:1">
+                        <option value="vibes-cookies.json">vibes-cookies.json (default)</option>
+                    </select>
+                    <span id="vibes-cookies-status" style="font-size:11px;color:var(--muted)">checking…</span>
+                </div>
+                <p style="font-size:11px;color:var(--muted);margin-top:6px">
+                    Export vibes.ai cookies with Cookie Editor extension → save as
+                    <code style="background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:4px">vibes-cookies.json</code> in doodlegen-full/
+                </p>
+            </div>
+
+            <div id="vibes-folder-row">
+                <span class="section-label">Download Folder</span>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input type="text" id="vibes-folder" value="Vibes_videos" placeholder="Vibes_videos"
+                        style="flex:1;font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)"
+                        oninput="document.getElementById('vibes-folder-preview').textContent='~/Downloads/'+( this.value.trim()||'Vibes_videos')">
+                    <button onclick="document.getElementById('vibes-folder').value='Vibes_videos';document.getElementById('vibes-folder-preview').textContent='~/Downloads/Vibes_videos'"
+                        style="font-size:11px;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--card-bg);color:var(--muted);cursor:pointer">Reset</button>
+                </div>
+                <div style="font-size:10px;color:var(--muted);margin-top:4px">→ <code id="vibes-folder-preview" style="font-size:10px">~/Downloads/Vibes_videos</code></div>
+            </div>
+            </div><!-- /vibes-section -->
+
+
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                    <label class="section-label" for="vid-prompt" style="margin-bottom:0">Prompt</label>
+                    <label id="vibes-bulk-toggle" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:12px;color:var(--muted);user-select:none">
+                        <input type="checkbox" id="vibes-bulk-mode" style="width:13px;height:13px;accent-color:#eab308" onchange="onVibsBulkToggle()">
+                        Bulk mode
+                        <span id="vibes-bulk-count" style="display:none;font-size:10px;font-weight:700;background:rgba(234,179,8,0.15);color:#eab308;border:1px solid rgba(234,179,8,0.3);padding:1px 7px;border-radius:99px">1 prompt</span>
+                    </label>
+                </div>
+                <textarea id="vid-prompt" rows="4" placeholder="Describe your video scene…" oninput="onVibsBulkInput()"></textarea>
+                <p id="vibes-bulk-hint" style="display:none;font-size:11px;color:var(--muted);margin-top:5px">Press <strong style="color:var(--fg)">Enter twice</strong> (blank line) between prompts. Each block becomes a separate job.</p>
+            </div>
+
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="section-label">Aspect Ratio</label>
+                    <select id="vid-aspect">
+                        <option value="16:9">Landscape (16:9)</option>
+                        <option value="9:16">Portrait (9:16)</option>
+                    </select>
+                </div>
+                <div id="vid-duration-col">
+                    <label class="section-label">Duration</label>
+                    <select id="vid-duration">
+                        <option value="5">5 seconds</option>
+                        <option value="8" selected>8 seconds</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="dola-headless-row" style="display:none">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:var(--muted)">
+                    <input type="checkbox" id="dola-headless" checked style="width:15px;height:15px;accent-color:var(--primary)">
+                    Run headless (hide browser window)
+                </label>
+            </div>
+
+
+            <button onclick="submitVideo()" id="vid-submit-btn" class="btn-generate" style="margin-top:auto;background:linear-gradient(135deg,#1d4ed8,#3b82f6);box-shadow:0 4px 24px rgba(29,78,216,0.4)">
+                <i class="fas fa-film"></i> Generate Video
+            </button>
+
+            <div id="vid-key-status" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="lg:col-span-3 studio-card flex flex-col" style="min-height:420px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <h3 class="heading text-lg font-semibold">Job Queue</h3>
+                <span style="font-size:12px;color:var(--muted)" id="vid-queue-label">Polls every 15 seconds</span>
+            </div>
+            <div id="video-jobs" class="space-y-3 flex-1">
+                <div class="empty-state">
+                    <div class="empty-icon">🎬</div>
+                    <p style="font-size:14px;color:var(--muted)">No jobs yet. Submit a video above.</p>
+                </div>
+            </div>
+            <!-- ── Log / Network panel ── -->
+            <div id="dola-log-box" style="display:none;margin-top:16px;background:#050508;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-family:Consolas,monospace;font-size:12px">
+                <!-- tab bar -->
+                <div style="display:flex;border-bottom:1px solid var(--border)">
+                    <button id="logtab-terminal" onclick="switchLogTab('terminal')" style="flex:1;padding:7px 0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;background:rgba(255,255,255,0.06);color:#e4e4e7">Terminal</button>
+                    <button id="logtab-network" onclick="switchLogTab('network')" style="flex:1;padding:7px 0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:none;cursor:pointer;background:transparent;color:var(--muted)">Network <span id="net-count" style="font-size:10px;background:rgba(99,102,241,.3);padding:1px 5px;border-radius:99px;margin-left:3px">0</span></button>
+                </div>
+                <!-- terminal pane -->
+                <div id="logpane-terminal" style="padding:12px;max-height:220px;overflow-y:auto;color:#a1a1aa">
+                    <div id="dola-log-lines"></div>
+                </div>
+                <!-- network pane -->
+                <div id="logpane-network" style="display:none;padding:0;max-height:340px;overflow-y:auto">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border)">
+                        <span style="font-size:10px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase">Captured requests</span>
+                        <div style="display:flex;gap:6px;align-items:center">
+                            <input id="net-filter" type="text" placeholder="filter url…" oninput="filterNetLog()" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:#0d0d12;color:#e4e4e7;width:160px;font-family:Consolas,monospace">
+                            <button onclick="clearNetLog()" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">Clear</button>
+                            <button onclick="exportNetLog()" style="font-size:10px;padding:2px 8px;border-radius:6px;border:1px solid rgba(99,102,241,.4);background:rgba(99,102,241,.1);color:#a5b4fc;cursor:pointer">Export JSON</button>
+                        </div>
+                    </div>
+                    <div id="net-log-rows" style="font-size:11px"></div>
+                    <div id="net-empty" style="padding:20px;text-align:center;color:var(--muted);font-size:12px">No requests captured yet. Start a Meta AI generation.</div>
+                </div>
+                <!-- request detail drawer -->
+                <div id="net-detail" style="display:none;position:fixed;top:0;right:0;width:520px;height:100vh;background:#0d0d12;border-left:1px solid var(--border);z-index:9999;overflow-y:auto;font-family:Consolas,monospace;font-size:12px">
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:#0d0d12">
+                        <span style="font-size:12px;font-weight:700;color:#e4e4e7">Request Detail</span>
+                        <button onclick="closeNetDetail()" style="border:none;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;line-height:1">×</button>
+                    </div>
+                    <div id="net-detail-body" style="padding:14px;color:#a1a1aa;white-space:pre-wrap;word-break:break-all"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ VOICE TAB ════ -->
+<div id="tab-voice" class="tab-panel hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <div class="lg:col-span-2 studio-card flex flex-col gap-5">
+            <div>
+                <h2 class="heading text-xl font-bold mb-1">Voice / TTS</h2>
+                <p class="text-xs" style="color:var(--muted)">Powered by Gemini TTS · max 450 chars</p>
+            </div>
+            <div class="info-box" style="font-size:12px">
+                Generate speech from text using Google's Gemini TTS. Max 450 chars per clip.
+            </div>
+            <div>
+                <label class="section-label" for="tts-text">Text to Speak</label>
+                <textarea id="tts-text" rows="6" maxlength="450" oninput="updateTtsCount(this)" placeholder="Enter text to convert to speech… (max 450 chars)"></textarea>
+                <p style="text-align:right;font-size:11px;color:var(--muted);margin-top:4px"><span id="tts-count">0</span>/450</p>
+            </div>
+            <div>
+                <label class="section-label">Voice</label>
+                <div id="voice-grid" class="flex flex-wrap gap-2 p-1" style="max-height:176px;overflow-y:auto"></div>
+            </div>
+            <button onclick="generateVoice()" class="btn-generate" style="margin-top:auto;background:linear-gradient(135deg,#059669,#10b981);box-shadow:0 4px 24px rgba(16,185,129,0.35)">
+                <i class="fas fa-microphone"></i> Generate Voice
+            </button>
+            <div id="tts-key-status" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <div class="lg:col-span-3 studio-card flex flex-col">
+            <h3 class="heading text-lg font-semibold mb-4">Audio Result</h3>
+
+            <div id="tts-loading" class="hidden flex-col items-center justify-center py-12" style="display:none">
+                <div class="loading-ring" style="border-top-color:var(--success)"></div>
+                <p style="font-size:14px;color:var(--muted)">Generating voice…</p>
+            </div>
+
+            <div id="tts-empty" class="empty-state flex-1">
+                <div class="empty-icon">🎵</div>
+                <p class="heading text-lg font-semibold">Your audio appears here</p>
+                <p style="font-size:14px;color:var(--muted);margin-top:8px">Enter text and pick a voice</p>
+            </div>
+
+            <div id="tts-result" class="hidden flex-col gap-4 flex-1" style="display:none">
+                <div style="padding:16px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,0.03)">
+                    <audio id="tts-audio" controls class="w-full"></audio>
+                </div>
+                <button onclick="downloadAudio()" class="btn-secondary">
+                    <i class="fas fa-download" style="font-size:11px"></i> Download Audio
+                </button>
+                <div id="tts-history" class="space-y-2" style="max-height:224px;overflow-y:auto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ GALLERY TAB ════ -->
+<div id="tab-gallery" class="tab-panel hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <h2 class="heading text-2xl font-bold">Gallery</h2>
+        <p style="font-size:14px;color:var(--muted)">Your generated creations</p>
+    </div>
+    <div id="gallery-grid" class="gallery-masonry"></div>
+    <div id="gallery-empty" class="empty-state">
+        <div class="empty-icon">🖼️</div>
+        <p class="heading text-lg font-semibold">Nothing generated yet</p>
+        <p style="font-size:14px;color:var(--muted);margin-top:8px">Start creating images, videos or voice clips</p>
+    </div>
+</div>
+
+<!-- ════ SETUP TAB ════ -->
+<div id="tab-setup" class="tab-panel hidden">
+    <div class="max-w-2xl mx-auto space-y-6">
+
+        <div class="studio-card">
+            <h2 class="heading text-xl font-bold mb-4">Auth Status</h2>
+            <div id="setup-status" style="font-size:14px;color:var(--muted)">Checking…</div>
+            <div class="divider"></div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <a href="/auth/login"
+                   style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:12px;font-weight:600;font-size:14px;color:#fff;background:linear-gradient(135deg,#1d4ed8,#3b82f6);box-shadow:0 4px 16px rgba(29,78,216,0.3);text-decoration:none">
+                    <i class="fab fa-google" style="font-size:12px"></i> Sign in with Google
+                </a>
+                <button id="logout-btn" onclick="signOut()" class="hidden btn-secondary" style="color:var(--error);border-color:rgba(239,68,68,0.3)">
+                    Sign out
+                </button>
+            </div>
+        </div>
+
+        <div class="studio-card">
+            <h2 class="heading text-xl font-bold mb-2">One-Time Setup</h2>
+            <p style="font-size:14px;color:var(--muted);margin-bottom:20px">Takes ~5 minutes. After this, sign in once and tokens refresh automatically forever.</p>
+            <ol class="space-y-5">
+                <li style="display:flex;gap:16px;font-size:14px">
+                    <div class="setup-step-num">1</div>
+                    <div style="color:var(--text);line-height:1.6">
+                        Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--accent);font-weight:600;text-decoration:underline">console.cloud.google.com</a>
+                        → Create a new project (or pick an existing one)
+                    </div>
+                </li>
+                <li style="display:flex;gap:16px;font-size:14px">
+                    <div class="setup-step-num">2</div>
+                    <div style="color:var(--text);line-height:1.6">
+                        <strong style="color:#fff">APIs &amp; Services → OAuth consent screen</strong><br>
+                        User Type: <em>External</em> → Fill in app name (e.g. "DoodleGen") → Save.<br>
+                        Under <em>Scopes</em>, add: <code>cloud-platform</code><br>
+                        Under <em>Test users</em>, add your own Google email.
+                    </div>
+                </li>
+                <li style="display:flex;gap:16px;font-size:14px">
+                    <div class="setup-step-num">3</div>
+                    <div style="color:var(--text);line-height:1.6">
+                        <strong style="color:#fff">APIs &amp; Services → Credentials → Create Credentials → OAuth client ID</strong><br>
+                        Application type: <em>Web application</em><br>
+                        Authorized redirect URI: <code>http://localhost:3000/auth/callback</code>
+                    </div>
+                </li>
+                <li style="display:flex;gap:16px;font-size:14px">
+                    <div class="setup-step-num">4</div>
+                    <div style="color:var(--text);line-height:1.6">
+                        Copy your <strong style="color:#fff">Client ID</strong> and <strong style="color:#fff">Client Secret</strong>.<br>
+                        Create <code>oauth.json</code> in the same folder as <code>server.js</code>:
+                        <pre style="margin-top:10px">{
+  "client_id": "YOUR_CLIENT_ID.apps.googleusercontent.com",
+  "client_secret": "YOUR_CLIENT_SECRET"
+}</pre>
+                    </div>
+                </li>
+                <li style="display:flex;gap:16px;font-size:14px">
+                    <div class="setup-step-num">5</div>
+                    <div style="color:var(--text);line-height:1.6">
+                        Restart the server (<code>node server.js</code>), then come back and click <strong style="color:#fff">Sign in with Google</strong> above.
+                        Done — you'll never need to paste a token again.
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="warning-box" style="border-radius:12px">
+            <strong style="color:#fff">Already have a bearer token?</strong> You can still paste it manually via the Tokens button in the nav.
+            Manual tokens work as a fallback if OAuth is not configured.
+        </div>
+    </div>
+</div>
+
+</div><!-- /max-w -->
+
+<!-- TOKEN MODAL -->
+<div id="api-modal" class="hidden studio-modal-bg">
+    <div class="studio-modal">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+            <h3 class="heading text-xl font-bold">Add Token</h3>
+            <button onclick="hideApiModal()" style="color:var(--muted);font-size:18px;background:none;border:none;cursor:pointer;line-height:1">✕</button>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">⚡ Fastest — Bookmarklet</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Drag this button to your bookmarks bar. Then open <strong style="color:#fff">labs.google</strong>, click the bookmark — token is sent to DoodleGen automatically.</p>
+            <a id="bookmarklet-link" href="#" class="btn-bookmarklet">
+                <i class="fas fa-star" style="font-size:11px"></i> Grab Token for DoodleGen
+            </a>
+            <p style="font-size:11px;color:var(--muted);margin-top:8px">Drag the button above to your bookmarks bar.</p>
+        </div>
+
+        <div class="modal-section">
+            <div class="modal-section-title">Manual Paste</div>
+            <p style="font-size:12px;color:var(--muted);margin-bottom:12px">
+                1. Open <a href="https://labs.google/fx/vi/tools/flow" target="_blank" style="color:var(--accent);text-decoration:underline">labs.google/fx/vi/tools/flow</a><br>
+                2. DevTools (F12) → Network → generate an image → click <code>batchGenerateImages</code><br>
+                3. Headers → copy <code>authorization</code> value (starts with <code>ya29.</code>)<br>
+                4. Paste below. Or paste the entire curl command — token is extracted automatically.
+            </p>
+            <div style="display:flex;gap:8px">
+                <input id="new-key-input" type="password" placeholder="ya29… or paste full curl">
+                <button onclick="addKey()"
+                        style="padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;cursor:pointer;white-space:nowrap;flex-shrink:0">
+                    Add
+                </button>
+            </div>
+        </div>
+
+        <div id="bk-token-status" style="font-size:12px;margin-bottom:16px;padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.02);color:var(--muted)"></div>
+
+        <div id="keys-list" class="space-y-2 mb-5"></div>
+
+        <div style="display:flex;gap:12px">
+            <button onclick="saveApiSettings()"
+                    style="flex:1;padding:12px;border-radius:10px;font-weight:700;font-size:14px;color:#fff;background:linear-gradient(135deg,var(--primary),var(--primary2));border:none;cursor:pointer">
+                Save
+            </button>
+            <button onclick="hideApiModal()" class="btn-secondary" style="flex:1">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<footer style="margin-top:64px;border-top:1px solid var(--border);padding:32px 0">
+    <div class="max-w-6xl mx-auto px-4 text-center" style="font-size:13px;color:var(--muted)">
+        DoodleGen — AI Image · Video · Voice · Powered by Google Flow API
+    </div>
+</footer>
+
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:9999;pointer-events:none;"></div>
+
+<script>
+// Safely convert an API error value (string or object) to a human-readable string
+function errStr(e, fallback) {
+    if (!e) return fallback || 'Unknown error';
+    if (typeof e === 'string') return e;
+    return e.detail || e.message || e.title || (e.code ? `Error: ${e.code}` : (fallback || JSON.stringify(e)));
+}
+
+// ══════════ TOAST ══════════
+function toast(msg, type='info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = { success:'check-circle', error:'exclamation-circle', info:'info-circle' };
+    el.innerHTML = `<i class="fas fa-${icons[type]||'info-circle'}" style="font-size:15px;flex-shrink:0"></i><span style="flex:1;line-height:1.4">${msg}</span>`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+}
+
+function toastSaved(filename, fullPath) {
+    const container = document.getElementById('toast-container');
+    // dir part of path
+    const parts = fullPath ? fullPath.split('/') : [];
+    const dir = parts.length > 1 ? parts.slice(0,-1).join('/') : (fullPath || '');
+    const shortDir = dir.replace(/^\/Users\/[^/]+/, '~');
+
+    const el = document.createElement('div');
+    el.className = 'save-notif';
+    el.innerHTML = `
+        <div class="save-notif-icon">
+            <i class="fas fa-check" style="color:#fff;font-size:15px"></i>
+        </div>
+        <div class="save-notif-body">
+            <div class="save-notif-title">Image saved</div>
+            <div class="save-notif-path" title="${(fullPath||'').replace(/"/g,'&quot;')}">${filename}</div>
+            <div class="save-notif-folder"><i class="fas fa-folder-open" style="font-size:10px"></i>${shortDir}</div>
+            <div class="save-notif-bar"><div class="save-notif-bar-fill"></div></div>
+        </div>
+        <button class="save-notif-close" onclick="this.closest('.save-notif').remove()">
+            <i class="fas fa-times"></i>
+        </button>`;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 5200);
+}
+
+// ══════════ STATE ══════════
+let apiKeys = JSON.parse(localStorage.getItem('bearerTokens') || '[]');
+let failedKeys = new Set();
+const galleryItems = [];
+let selectedVoice = 'Kore';
+let currentRefMediaId = null;
+let lastTtsBlob = null;
+const videoJobs = [];
+let pollInterval = null;
+
+const TEMPLATES = {
+    doodle: 'Hand-drawn 2D doodle cartoon, flat colors, bold black outlines, sketchy imperfect marker lines, educational explainer YouTube style, no 3D, no photorealism',
+    anime: 'Anime illustration style, vibrant colors, cel-shaded, large expressive eyes, clean linework, manga influence',
+    cinematic: 'Cinematic photorealistic scene, dramatic lighting, shallow depth of field, film grain, 4K ultra-detailed',
+    realistic: 'Hyperrealistic photograph, natural lighting, ultra-detailed, 8K resolution, lifelike textures',
+    product: 'Professional product photography, clean white background, soft shadows, commercial advertising style, sharp focus',
+    social: 'Social media graphic, bold typography, vibrant colors, trendy aesthetic, Instagram-worthy composition'
+};
+
+// ══════════ TABS ══════════
+function showTab(name) {
+    document.querySelectorAll('.tab-panel').forEach(el => el.classList.add('hidden'));
+    document.getElementById('tab-' + name).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    if (name === 'gallery') renderGallery();
+    if (name === 'voice') renderVoiceGrid();
+}
+
+// ══════════ TEMPLATES ══════════
+function applyTemplate(key) {
+    document.getElementById('img-prompt').value = TEMPLATES[key];
+}
+
+// ══════════ AUTH GUARD ══════════
+// Returns true if we have OAuth or at least one manual token.
+// If neither, shows the appropriate prompt and returns false.
+function requireAuth(showModal = true) {
+    if (authState.hasToken) return true;
+    if (apiKeys.length) return true;
+    if (showModal) {
+        if (authState.configured) {
+            if (confirm('You are not signed in. Sign in with Google now?')) {
+                window.location.href = '/auth/login';
+            }
+        } else {
+            showApiModal();
+        }
+    }
+    return false;
+}
+
+// ══════════ TOKEN MANAGEMENT ══════════
+function renderTokenCount() {
+    document.getElementById('token-count').textContent = `(${apiKeys.length})`;
+}
+
+function renderKeyStatus(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (!apiKeys.length) {
+        if (authState.hasToken) {
+            el.innerHTML = `<span class="key-tag active"><i class="fas fa-check-circle" style="font-size:10px"></i> Auto-managed token active (~${authState.expiresIn ?? '?'}m left)</span>`;
+        } else if (authState.status === 'refreshing' || authState.status === 'logging_in') {
+            el.innerHTML = '<span class="key-tag" style="color:var(--warning);border-color:rgba(245,158,11,0.3)"><i class="fas fa-circle-notch fa-spin" style="font-size:10px"></i> Getting token automatically...</span>';
+        } else {
+            el.innerHTML = '<span class="key-tag" style="color:var(--warning);border-color:rgba(249,115,22,0.3)">Auto-login starting — or <button onclick="showApiModal()" style="text-decoration:underline;font-weight:700;background:none;border:none;cursor:pointer;color:inherit;margin-left:4px">paste token manually</button></span>';
+        }
+        return;
+    }
+    el.innerHTML = apiKeys.map((k, i) => {
+        const cls = failedKeys.has(i) ? 'failed' : 'active';
+        const lbl = failedKeys.has(i) ? '✗' : '✓';
+        return `<span class="key-tag ${cls}">${lbl} Key ${i+1} (…${k.slice(-4)})</span>`;
+    }).join('');
+}
+
+function renderAllKeyStatuses() {
+    ['img-key-status','vid-key-status','tts-key-status'].forEach(renderKeyStatus);
+}
+
+function renderKeysList() {
+    const el = document.getElementById('keys-list');
+    if (!apiKeys.length) { el.innerHTML = '<p style="font-size:14px;color:var(--muted)">No tokens yet.</p>'; return; }
+    el.innerHTML = apiKeys.map((k, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03)">
+            <span style="flex:1;font-family:monospace;font-size:12px;color:var(--muted)">Key ${i+1}: …${k.slice(-12)}</span>
+            <button onclick="removeKey(${i})" style="color:var(--error);font-weight:700;font-size:14px;padding:2px 8px;background:none;border:none;cursor:pointer">✕</button>
+        </div>`).join('');
+}
+
+function extractTokenFromCurl(text) {
+    const m = text.match(/[Aa]uthorization['":\s]+([yY][aA]29[^\s'"\\]+)/);
+    return m ? m[1] : null;
+}
+
+function addKey() {
+    const input = document.getElementById('new-key-input');
+    let key = input.value.trim();
+    if (!key) return;
+    const extracted = extractTokenFromCurl(key);
+    if (extracted) key = extracted;
+    if (key.startsWith('Bearer ')) key = key.slice(7).trim();
+    if (apiKeys.includes(key)) { toast('Key already added.', 'info'); return; }
+    apiKeys.push(key);
+    input.value = '';
+    renderKeysList();
+}
+
+function removeKey(i) {
+    apiKeys.splice(i, 1);
+    renderKeysList();
+}
+
+function showApiModal() {
+    renderKeysList();
+    checkBookmarkletToken();
+    document.getElementById('api-modal').classList.remove('hidden');
+}
+
+function hideApiModal() {
+    document.getElementById('api-modal').classList.add('hidden');
+}
+
+function saveApiSettings() {
+    localStorage.setItem('bearerTokens', JSON.stringify(apiKeys));
+    failedKeys.clear();
+    renderTokenCount();
+    renderAllKeyStatuses();
+    hideApiModal();
+}
+
+// ══════════ IMAGE GENERATION ══════════
+async function generateImages() {
+    const prompt = document.getElementById('img-prompt').value.trim();
+    if (!prompt) { toast('Please enter a prompt', 'error'); return; }
+    if (!requireAuth()) return;
+
+    const aspect = document.getElementById('img-aspect').value;
+    const count = parseInt(document.getElementById('img-count').value);
+
+    showImgLoading('Uploading reference image...', count);
+
+    // Upload reference image if selected
+    let referenceImageId = null;
+    const refInput = document.getElementById('ref-image-input');
+    if (refInput.files[0] && !currentRefMediaId) {
+        document.getElementById('ref-status').textContent = 'Uploading...';
+        try {
+            const b64 = await fileToBase64(refInput.files[0]);
+            const resp = await apiFetch('/api/upload/image', { tokens: apiKeys, imageBase64: b64.split(',')[1], mimeType: refInput.files[0].type, fileName: refInput.files[0].name });
+            if (resp.mediaId) {
+                currentRefMediaId = resp.mediaId;
+                document.getElementById('ref-status').textContent = 'Uploaded ✓';
+            }
+        } catch (e) {
+            document.getElementById('ref-status').textContent = 'Upload failed';
+        }
+    }
+    if (currentRefMediaId) referenceImageId = currentRefMediaId;
+
+    showImgLoading('Generating image(s)...', count);
+
+    try {
+        const data = await apiFetch('/api/generate/image', { prompt, tokens: apiKeys, aspect, count, referenceImageId });
+        hideImgLoading();
+        if (!data.urls?.length) throw new Error('No images returned');
+        renderImageResults(data.urls, prompt);
+    } catch (e) {
+        hideImgLoading();
+        showImgEmpty();
+        toast('❌ ' + e.message, 'error');
+    }
+}
+
+let _genStepTimer = null;
+const GEN_STEPS = [
+    ['Analysing prompt…',       'Breaking down your description'],
+    ['Composing scene…',        'Laying out shapes and colours'],
+    ['Rendering details…',      'Adding textures and lighting'],
+    ['Finalising image…',       'Polishing and encoding'],
+];
+
+function showImgLoading(msg, skeletonCount) {
+    document.getElementById('img-loading-msg').textContent = msg || 'Generating your image…';
+    document.getElementById('img-loading-sub').textContent = 'Talking to Google Flow API';
+    // Render the right number of skeleton cards
+    const n = Math.max(1, Math.min(skeletonCount || 1, 12));
+    const grid = document.getElementById('gen-skeleton-grid');
+    if (grid) {
+        grid.style.gridTemplateColumns = n === 1 ? '1fr' : '1fr 1fr';
+        grid.innerHTML = Array.from({ length: n }, () =>
+            '<div class="gen-card"><div class="gen-card-inner"></div><div class="gen-card-shimmer"></div></div>'
+        ).join('');
+    }
+    // Show loader; keep results visible so previous batches stay on screen
+    document.getElementById('img-loading').style.display = 'block';
+    document.getElementById('img-empty').style.display = 'none';
+    const btn = document.getElementById('img-gen-btn');
+    if (btn) btn.disabled = true;
+    // Scroll results to top so the banner is the first thing visible
+    const res = document.getElementById('img-results');
+    if (res && res.style.display !== 'none') res.scrollTop = 0;
+    // Animate step dots
+    let step = 0;
+    clearInterval(_genStepTimer);
+    _advanceGenStep(step);
+    _genStepTimer = setInterval(() => {
+        step = (step + 1) % GEN_STEPS.length;
+        _advanceGenStep(step);
+    }, 2200);
+}
+
+function _advanceGenStep(step) {
+    for (let i = 0; i < 4; i++) {
+        const el = document.getElementById(`gstep-${i}`);
+        if (!el) continue;
+        el.classList.remove('active', 'done');
+        if (i < step)  el.classList.add('done');
+        if (i === step) el.classList.add('active');
+    }
+    const [main, sub] = GEN_STEPS[step] || GEN_STEPS[0];
+    const msg = document.getElementById('img-loading-msg');
+    const sub_ = document.getElementById('img-loading-sub');
+    if (msg) msg.textContent = main;
+    if (sub_) sub_.textContent = sub;
+}
+
+function hideImgLoading() {
+    clearInterval(_genStepTimer);
+    document.getElementById('img-loading').style.display = 'none';
+    const btn = document.getElementById('img-gen-btn');
+    if (btn) btn.disabled = false;
+}
+
+function updatePromptCount(el) {
+    const c = document.getElementById('img-char-count');
+    if (c) c.textContent = el.value.length;
+}
+
+function showImgEmpty() {
+    document.getElementById('img-empty').style.display = 'flex';
+}
+
+let lastGeneratedUrls = [];
+let _imgBatchCounter = 0;
+
+function renderImageResults(urls, prompt) {
+    lastGeneratedUrls = urls;
+    const aspect = document.getElementById('img-aspect').value;
+    const cols = urls.length === 1 ? '1fr' : '1fr 1fr';
+    const aspectStyle = aspect === '9:16' ? 'aspect-ratio:9/16' : aspect === '1:1' ? 'aspect-ratio:1/1' : 'aspect-ratio:16/9';
+    const batchId = _imgBatchCounter++;
+    const batchPrefix = `b${batchId}`;
+    // Truncate prompt for display — avoid any overflow
+    const displayPrompt = (prompt || '').substring(0, 72) + ((prompt||'').length > 72 ? '…' : '');
+
+    const batchHtml = `
+        <div class="img-batch" id="img-batch-${batchId}">
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;margin-bottom:8px">
+                <span style="background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;flex-shrink:0">#${batchId+1}</span>
+                <span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0" title="${(prompt||'').replace(/"/g,'&quot;')}">${displayPrompt}</span>
+                <span style="font-size:10px;color:var(--muted);flex-shrink:0;white-space:nowrap">${urls.length}×</span>
+            </div>
+            <div style="display:grid;grid-template-columns:${cols};gap:8px">
+                ${urls.map((url, i) => `
+                <div class="img-thumb-wrap" id="${batchPrefix}-wrap-${i}" style="${aspectStyle};min-width:0" onclick="selectImageBatch('${batchPrefix}',${i},'${url.replace(/'/g,'\\\'')}')" >
+                    <img src="${url}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px" alt="Image ${i+1}" loading="lazy">
+                    <div class="img-thumb-overlay" style="border-radius:10px">
+                        <button onclick="event.stopPropagation();saveImageToFolder(this.dataset.url,this.dataset.fname)" data-url="${url}" data-fname="${promptToFilename(prompt, i, null)}"
+                                style="padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;color:#fff;background:rgba(124,58,237,0.85);backdrop-filter:blur(4px);border:none;cursor:pointer;white-space:nowrap">
+                            <i class="fas fa-download" style="margin-right:4px"></i>Save
+                        </button>
+                    </div>
+                </div>`).join('')}
+            </div>
+        </div>`;
+
+    const grid = document.getElementById('img-grid');
+    // Prepend newest batch at top
+    grid.insertAdjacentHTML('afterbegin', batchHtml);
+
+    // Show results panel, hide empty state
+    const res = document.getElementById('img-results');
+    res.style.display = 'flex';
+    res.style.flexDirection = 'column';
+    document.getElementById('img-empty').classList.add('hidden');
+    document.getElementById('upscale-btn').classList.remove('hidden');
+    document.getElementById('clear-results-btn').style.display = 'inline-flex';
+
+    // Scroll results area to top so new batch is immediately visible
+    res.scrollTop = 0;
+
+    // Add to gallery
+    urls.forEach(url => galleryItems.unshift({ type: 'image', src: url, prompt }));
+}
+
+function clearAllResults() {
+    document.getElementById('img-grid').innerHTML = '';
+    _imgBatchCounter = 0;
+    document.getElementById('img-results').style.display = 'none';
+    document.getElementById('img-empty').classList.remove('hidden');
+    document.getElementById('clear-results-btn').style.display = 'none';
+}
+
+function selectImageBatch(batchPrefix, i, url) {
+    selectedImageUrl = url;
+    document.querySelectorAll('.img-thumb-wrap').forEach(el => el.classList.remove('selected'));
+    const el = document.getElementById(`${batchPrefix}-wrap-${i}`);
+    if (el) el.classList.add('selected');
+}
+
+let selectedImageUrl = null;
+
+function selectImage(i) {
+    selectedImageUrl = lastGeneratedUrls[i];
+    document.querySelectorAll('[id^="img-wrap-"]').forEach((el, j) => {
+        el.classList.toggle('selected', j === i);
+    });
+}
+
+async function upscaleCurrentImage() {
+    const opts = document.getElementById('upscale-opts');
+    const isHidden = opts.classList.contains('hidden');
+    if (isHidden) {
+        opts.classList.remove('hidden');
+        opts.style.display = 'flex';
+    } else {
+        opts.classList.add('hidden');
+        opts.style.display = 'none';
+    }
+}
+
+async function upscaleImage(res) {
+    if (!selectedImageUrl && lastGeneratedUrls.length) selectedImageUrl = lastGeneratedUrls[0];
+    if (!selectedImageUrl) { toast('Select an image first', 'error'); return; }
+    if (!requireAuth()) return;
+
+    // We need a mediaId — for now use the URL as a proxy identifier
+    // The upscale endpoint requires a media name, not a URL. Inform user.
+    toast('Upscaling requires the internal media ID. This feature works when the image was just generated. Please use a recently generated image.', 'info');
+    const opts = document.getElementById('upscale-opts');
+    opts.classList.add('hidden');
+    opts.style.display = 'none';
+}
+
+function downloadSingleImage(url, i, filename) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || `doodlegen-${i+1}.png`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// Save image to local disk via server (same folder/filename logic as extension)
+async function saveImageToFolder(url, filename) {
+    const folder = (document.getElementById('save-folder')?.value || 'AutoLabs_meta').trim();
+    try {
+        const resp = await fetch('/api/save/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, filename, folder })
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(errStr(data.error, 'Save failed'));
+        toastSaved(data.filename, data.path);
+        return data.path;
+    } catch (e) {
+        console.error('saveImageToFolder error:', e.message);
+        toast(`⚠️ Server save failed (${e.message}) — using browser download`, 'error');
+        downloadSingleImage(url, 0, filename);
+        return null;
+    }
+}
+
+async function saveImageToFolderNamed(url, filename, folder) {
+    const f = (folder || document.getElementById('save-folder')?.value || 'AutoLabs_meta').trim() || 'AutoLabs_meta';
+    try {
+        const resp = await fetch('/api/save/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, filename, folder: f })
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(errStr(data.error, 'Save failed'));
+        toastSaved(data.filename, data.path);
+        return data.path;
+    } catch (e) {
+        console.error('saveImageToFolderNamed error:', e.message);
+        toast(`⚠️ Server save failed (${e.message}) — using browser download`, 'error');
+        downloadSingleImage(url, 0, filename);
+        return null;
+    }
+}
+
+// ══════════ PARALLEL ACCOUNTS (Google sign-in) ══════════
+// Server-managed accounts; state arrives via SSE.
+let bulkAccounts = [];   // [{id, status, statusMsg, userInfo:{email,name,picture}, hasToken}]
+
+const ACCT_COLORS = [
+    ['#7c3aed','#a855f7'], ['#0ea5e9','#38bdf8'], ['#10b981','#34d399'],
+    ['#f59e0b','#fbbf24'], ['#ef4444','#f87171'], ['#8b5cf6','#c084fc'],
+    ['#06b6d4','#67e8f9'], ['#ec4899','#f9a8d4'],
+];
+function acctColorFor(i) { return ACCT_COLORS[i % ACCT_COLORS.length]; }
+
+function renderBulkAccounts() {
+    const list   = document.getElementById('bulk-acct-list');
+    const empty  = document.getElementById('bulk-acct-empty');
+    const badge  = document.getElementById('bulk-worker-count');
+    const ready  = bulkAccounts.filter(a => a.hasToken).length;
+    badge.textContent = ready;
+    document.getElementById('bulk-worker-badge').style.opacity = ready ? '1' : '0.45';
+
+    if (!bulkAccounts.length) {
+        list.innerHTML = '';
+        empty.style.display = '';
+        return;
+    }
+    empty.style.display = 'none';
+    list.innerHTML = bulkAccounts.map((a, i) => {
+        const [c1, c2] = acctColorFor(i);
+        const initials = a.userInfo?.name
+            ? a.userInfo.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+            : `A${i + 1}`;
+        const avatarHtml = a.userInfo?.picture
+            ? `<img src="${a.userInfo.picture}" style="width:28px;height:28px;border-radius:50%;object-fit:cover" referrerpolicy="no-referrer">`
+            : `<div class="acct-avatar" style="background:linear-gradient(135deg,${c1},${c2});color:#fff">${initials}</div>`;
+        const label = a.userInfo?.name || a.userInfo?.email || `Account ${i + 1}`;
+        const sub   = a.userInfo?.email || `…${a.id}`;
+        const dotCls = a.status === 'ready' ? 'ready'
+                     : (a.status === 'error' || a.status === 'login_needed') ? 'error' : 'running';
+        const dotLabel = a.status === 'ready' ? 'ready'
+                       : a.status === 'logging_in' ? 'signing in…'
+                       : a.status === 'refreshing' ? 'refreshing…'
+                       : a.status === 'login_needed' ? 'needs login'
+                       : a.statusMsg || a.status;
+        const signInBtn = (a.status === 'login_needed' || a.status === 'error')
+            ? `<button onclick="reAuthAccount('${a.id}')" style="font-size:10px;padding:2px 7px;border-radius:6px;border:1px solid rgba(66,133,244,0.4);background:rgba(66,133,244,0.1);color:#7aadff;cursor:pointer;font-family:'Space Grotesk',sans-serif;margin-right:4px"><i class="fab fa-google" style="font-size:9px"></i> Re-auth</button>` : '';
+        return `<div class="acct-chip" id="acct-chip-${i}">
+            ${avatarHtml}
+            <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:600;color:var(--text);line-height:1.2">${label}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:1px">${sub} · <span id="acct-job-${i}">${dotLabel}</span></div>
+            </div>
+            ${signInBtn}
+            <div class="acct-status-dot ${dotCls}" id="acct-dot-${i}" title="${a.statusMsg || ''}"></div>
+            ${!bulkRunning ? `<button onclick="removeGoogleAccount('${a.id}')" style="color:var(--error);font-size:13px;font-weight:700;background:none;border:none;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1;margin-left:2px">✕</button>` : ''}
+        </div>`;
+    }).join('');
+}
+
+// Compatibility stubs so bulkRun's status-update calls don't throw
+function bulkSetAcctStatus(i, status) {
+    if (bulkAccounts[i]) bulkAccounts[i].status = status;
+    const dot = document.getElementById(`acct-dot-${i}`);
+    if (dot) dot.className = `acct-status-dot ${status === 'ready' ? 'ready' : status === 'error' ? 'error' : 'running'}`;
+}
+function bulkSetAcctJob(i, txt) {
+    const el = document.getElementById(`acct-job-${i}`);
+    if (el) el.textContent = txt;
+}
+
+// SSE listener — push account state from server in real time
+(function initAccountSSE() {
+    let es;
+    function connect() {
+        es = new EventSource('/api/accounts/events');
+        es.onmessage = e => {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'snapshot') {
+                bulkAccounts = msg.accounts;
+            } else if (msg.type === 'update') {
+                const idx = bulkAccounts.findIndex(a => a.id === msg.account.id);
+                if (idx >= 0) bulkAccounts[idx] = msg.account;
+                else bulkAccounts.push(msg.account);
+            } else if (msg.type === 'removed') {
+                bulkAccounts = bulkAccounts.filter(a => a.id !== msg.id);
+            }
+            renderBulkAccounts();
+        };
+        es.onerror = () => { es.close(); setTimeout(connect, 3000); };
+    }
+    connect();
+})();
+
+async function addGoogleAccount() {
+    const btn = document.getElementById('bulk-add-acct-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:10px"></i> Opening Chrome…';
+    try {
+        await apiFetch('/api/accounts/add', {});
+        toast('Chrome is opening — sign in with Google', 'info');
+    } catch(e) {
+        toast('Failed to open login window', 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fab fa-google" style="font-size:10px"></i> Sign in with Google';
+}
+
+async function removeGoogleAccount(id) {
+    await apiFetch('/api/accounts/' + id, {}, 'DELETE');
+    toast('Account removed', 'info');
+}
+
+async function reAuthAccount(id) {
+    await apiFetch('/api/accounts/' + id + '/login', {});
+    toast('Re-auth: Chrome is opening', 'info');
+}
+
+
+// ══════════ BULK QUEUE ══════════
+let bulkQueue   = [];
+let bulkRunning = false;
+let bulkStopped = false;
+let bulkTimingSamples = [];
+const BULK_FALLBACK_SEC = 45;
+
+function formatDuration(sec) {
+    if (sec < 60) return `~${sec}s`;
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return s > 0 ? `~${m}m ${s}s` : `~${m}m`;
+}
+
+function bulkPromptsChanged() {
+    const raw   = document.getElementById('bulk-prompts').value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const statsEl = document.getElementById('bulk-prompt-stats');
+    const countEl = document.getElementById('bulk-prompt-count');
+    const etaEl   = document.getElementById('bulk-eta-preview');
+    const etaTxt  = document.getElementById('bulk-eta-preview-text');
+
+    if (!lines.length) { statsEl.style.display = 'none'; return; }
+    statsEl.style.display = 'flex';
+    countEl.textContent = lines.length;
+
+    const imgCount  = parseInt(document.getElementById('img-count')?.value || 1);
+    const workers   = Math.max(1, bulkAccounts.length);
+    const avgSec    = bulkTimingSamples.length
+        ? bulkTimingSamples.reduce((a,b) => a+b, 0) / bulkTimingSamples.length
+        : BULK_FALLBACK_SEC;
+    const batches   = Math.ceil(lines.length / workers);
+    const totalSec  = Math.round(batches * imgCount * avgSec);
+    etaTxt.textContent = formatDuration(totalSec) + (workers > 1 ? ` (${workers}×)` : '');
+    etaEl.style.display = '';
+}
+
+function bulkUpdateFolderPreview() {
+    const val = (document.getElementById('bulk-folder')?.value || 'AutoLabs_meta').trim() || 'AutoLabs_meta';
+    const el = document.getElementById('bulk-folder-preview');
+    if (el) el.textContent = `~/Downloads/${val}`;
+}
+
+function toggleCard(id) {
+    const card = document.getElementById(id);
+    const body = document.getElementById('body-' + id);
+    if (!card || !body) return;
+    const open = card.classList.contains('is-open');
+    if (open) { body.classList.add('collapsed'); card.classList.remove('is-open'); }
+    else       { body.classList.remove('collapsed'); card.classList.add('is-open'); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    ['card-single', 'card-bulk'].forEach(id => {
+        const card = document.getElementById(id);
+        const body = document.getElementById('body-' + id);
+        if (card && body) card.classList.add('is-open');
+    });
+    const bf = document.getElementById('bulk-folder');
+    if (bf) bf.addEventListener('input', bulkUpdateFolderPreview);
+    renderBulkAccounts();
+    updateVideoBackend();
+});
+
+function bulkLoadExample() {
+    document.getElementById('bulk-prompts').value =
+        'A serene mountain lake at sunrise, photorealistic\nAbstract geometric patterns in neon colors\nCyberpunk city street at night, rain reflections\nWatercolor botanical illustration of tropical flowers\nMinimalist flat design, mountain landscape';
+    bulkPromptsChanged();
+}
+
+function bulkClearAll() {
+    if (bulkRunning) return;
+    document.getElementById('bulk-prompts').value = '';
+    bulkQueue = [];
+    renderBulkQueue();
+    document.getElementById('bulk-queue-wrap').style.display = 'none';
+    document.getElementById('bulk-prompt-stats').style.display = 'none';
+}
+
+function promptToFilename(prompt, idx, imgNum) {
+    const raw = (prompt || '').trim();
+    const tsMatch = raw.match(/^\[(\d{1,2}):(\d{2})\]/);
+    let prefix;
+    if (tsMatch) {
+        prefix = `[${tsMatch[1].padStart(2,'0')}-${tsMatch[2]}]`;
+    } else {
+        const now = new Date();
+        prefix = `[${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}]`;
+    }
+    const slug = raw
+        .replace(/\[.*?\]/g, '')
+        .replace(/[\\/:*?"<>|,]/g, '')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .substring(0, 60) || 'image';
+    const suffix = imgNum && imgNum > 1 ? `_${imgNum}` : '';
+    return `${prefix}_${slug}${suffix}.png`;
+}
+
+function renderBulkQueue() {
+    const list = document.getElementById('bulk-queue-list');
+    if (!bulkQueue.length) { list.innerHTML = ''; return; }
+    const done = bulkQueue.filter(t => t.status === 'done').length;
+    document.getElementById('bq-counter').textContent = `${done}/${bulkQueue.length}`;
+    list.innerHTML = bulkQueue.map((item, i) => {
+        const workerIdx = item.workerIdx;
+        const hasWorker = workerIdx !== undefined && bulkAccounts.length > 0;
+        const [c1, c2] = hasWorker ? acctColorFor(workerIdx) : ['#6b7280','#9ca3af'];
+        const workerLabel = hasWorker ? `A${workerIdx + 1}` : '';
+        return `<div class="bq-item bq-${item.status}" id="bq-item-${i}">
+            <div style="flex:1;min-width:0">
+                <div style="display:flex;align-items:center;gap:5px;margin-bottom:2px">
+                    ${hasWorker ? `<span style="width:16px;height:16px;border-radius:50%;background:linear-gradient(135deg,${c1},${c2});display:inline-flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0">${workerLabel}</span>` : ''}
+                    <div style="font-size:12px;color:var(--text);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${item.prompt.replace(/"/g,'&quot;')}">${item.prompt}</div>
+                </div>
+                ${item.savedPaths?.length
+                    ? item.savedPaths.map(p => `<div style="font-size:10px;color:var(--success);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p}">💾 ${p}</div>`).join('')
+                    : `<div style="font-size:10px;color:var(--muted);margin-top:2px">${item.filename}</div>`}
+                ${item.status === 'running' ? `<div class="bq-progress"><div class="bq-progress-fill"></div></div>` : ''}
+                ${item.status === 'error' ? `<div style="font-size:10px;color:#f87171;margin-top:2px">${item.error || 'Failed'}</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+                <span class="bq-badge bq-${item.status}">${item.status === 'running' ? '⏳' : item.status === 'done' ? '✓' : item.status === 'error' ? '✗' : '·'}</span>
+                ${item.status === 'done' && item.urls?.length ? item.urls.map((url, j) => {
+                    const fname = promptToFilename(item.prompt, i, j > 0 ? j+1 : null);
+                    const label = item.urls.length > 1 ? `${j+1}` : '↓';
+                    return `<button onclick="saveImageToFolder(this.dataset.url,this.dataset.fname)" data-url="${url.replace(/"/g,'&quot;')}" data-fname="${fname}" style="font-size:10px;padding:2px 8px;border-radius:6px;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:#34d399;cursor:pointer;white-space:nowrap"><i class="fas fa-download"></i> ${label}</button>`;
+                }).join('') : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── ETA ticker ──────────────────────────────────────────────────────────────
+let _bulkEtaInterval = null;
+
+function bulkStartEtaTicker(pendingCount, countPerPrompt, workers) {
+    if (_bulkEtaInterval) clearInterval(_bulkEtaInterval);
+    const etaEl = document.getElementById('bq-eta');
+    const avgSec = bulkTimingSamples.length
+        ? bulkTimingSamples.reduce((a,b) => a+b, 0) / bulkTimingSamples.length
+        : BULK_FALLBACK_SEC;
+    const batches = Math.ceil(pendingCount / workers);
+    let secsLeft  = Math.round(batches * countPerPrompt * avgSec);
+
+    function tick() {
+        if (!bulkRunning || bulkStopped) { clearInterval(_bulkEtaInterval); etaEl.textContent = ''; return; }
+        if (secsLeft <= 0) { etaEl.textContent = 'finishing…'; return; }
+        etaEl.textContent = `ETA ${formatDuration(secsLeft)}`;
+        secsLeft = Math.max(0, secsLeft - 1);
+    }
+    tick();
+    _bulkEtaInterval = setInterval(tick, 1000);
+}
+
+// ── Worker: processes one queue item with a specific token ───────────────────
+async function bulkWorker(workerIdx, token, aspect, count, bulkFolder) {
+    while (true) {
+        // Claim next pending item atomically
+        const i = bulkQueue.findIndex(t => t.status === 'pending');
+        if (i === -1 || bulkStopped) break;
+        bulkQueue[i].status  = 'running';
+        bulkQueue[i].workerIdx = workerIdx;
+        renderBulkQueue();
+        bulkSetAcctStatus(workerIdx, 'running');
+        bulkSetAcctJob(workerIdx, `prompt ${i+1}…`);
+
+        const el = document.getElementById(`bq-item-${i}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Show skeletons: count × number of currently running workers
+        const activeWorkers = bulkQueue.filter(t => t.status === 'running').length;
+        showImgLoading(`Generating prompt ${i+1} of ${bulkQueue.length}…`, count * activeWorkers);
+
+        const t0 = Date.now();
+        try {
+            const data = await apiFetch('/api/generate/image', {
+                prompt: bulkQueue[i].prompt,
+                tokens: [],
+                aspect,
+                count
+            });
+            if (!data.urls?.length) throw new Error('No images returned');
+
+            const elapsed = (Date.now() - t0) / 1000;
+            bulkTimingSamples.push(elapsed / count);
+            if (bulkTimingSamples.length > 20) bulkTimingSamples.shift();
+
+            bulkQueue[i].urls   = data.urls;
+            bulkQueue[i].status = 'done';
+            bulkAccounts[workerIdx].jobCount = (bulkAccounts[workerIdx].jobCount || 0) + 1;
+            bulkSetAcctJob(workerIdx, `${bulkAccounts[workerIdx].jobCount} done`);
+
+            renderImageResults(data.urls, bulkQueue[i].prompt);
+
+            for (let j = 0; j < data.urls.length; j++) {
+                const fname = promptToFilename(bulkQueue[i].prompt, i, j > 0 ? j+1 : null);
+                const savedPath = await saveImageToFolderNamed(data.urls[j], fname, bulkFolder);
+                if (savedPath) bulkQueue[i].savedPaths.push(savedPath);
+            }
+            data.urls.forEach(url => galleryItems.unshift({ type:'image', src:url, prompt:bulkQueue[i].prompt }));
+        } catch (e) {
+            bulkQueue[i].status = 'error';
+            bulkQueue[i].error  = e.message;
+            bulkSetAcctJob(workerIdx, 'error');
+        }
+        renderBulkQueue();
+        if (!bulkStopped) await new Promise(r => setTimeout(r, 400));
+    }
+    bulkSetAcctStatus(workerIdx, 'idle');
+    bulkSetAcctJob(workerIdx, `${bulkAccounts[workerIdx].jobCount || 0} done`);
+}
+
+async function bulkRun() {
+    if (bulkRunning) return;
+    if (!requireAuth()) return;
+
+    const raw   = document.getElementById('bulk-prompts').value;
+    const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (!lines.length) { toast('Enter at least one prompt', 'error'); return; }
+
+    const aspect = document.getElementById('bulk-aspect').value;
+    const count  = parseInt(document.getElementById('img-count').value);
+    const bulkFolder = (document.getElementById('bulk-folder')?.value || document.getElementById('save-folder')?.value || 'AutoLabs_meta').trim() || 'AutoLabs_meta';
+
+    // Worker slots: one per signed-in Google account, or 1 if none (server resolves tokens)
+    const workerCount = Math.max(1, bulkAccounts.filter(a => a.hasToken).length);
+    const workerTokens = Array.from({ length: workerCount }, (_, i) => `__account_${i}__`);
+
+    bulkQueue   = lines.map((prompt, i) => ({ prompt, status:'pending', urls:[], savedPaths:[], workerIdx:undefined, filename:promptToFilename(prompt, i, null), error:'' }));
+    bulkStopped = false;
+    bulkRunning = true;
+
+    // Reset account job counters & status
+    bulkAccounts.forEach((a, i) => { a.jobCount = 0; a.status = 'ready'; });
+    renderBulkAccounts();
+
+    // Show parallel badge
+    const pInfo = document.getElementById('bq-parallel-info');
+    const pLabel = document.getElementById('bq-parallel-label');
+    if (workerTokens.length > 1) {
+        pLabel.textContent = `${workerTokens.length} parallel`;
+        pInfo.style.display = '';
+    } else {
+        pInfo.style.display = 'none';
+    }
+
+    document.getElementById('bulk-run-label').textContent = `Running… (${workerTokens.length}×)`;
+    document.getElementById('bulk-queue-wrap').style.display = 'block';
+    document.getElementById('bulk-run-btn').disabled = true;
+    document.getElementById('bulk-stop-btn').style.display = '';
+    renderBulkQueue();
+
+    bulkStartEtaTicker(lines.length, count, workerTokens.length);
+
+    await Promise.all(workerTokens.map((token, wi) =>
+        bulkWorker(wi, token, aspect, count, bulkFolder)
+    ));
+
+    clearInterval(_bulkEtaInterval);
+    hideImgLoading();
+    document.getElementById('bq-eta').textContent = '';
+    pInfo.style.display = 'none';
+    bulkRunning = false;
+    document.getElementById('bulk-run-btn').disabled = false;
+    document.getElementById('bulk-run-label').textContent = 'Run Queue';
+    document.getElementById('bulk-stop-btn').style.display = 'none';
+
+    bulkAccounts.forEach((_, i) => bulkSetAcctStatus(i, 'idle'));
+    renderBulkAccounts();
+
+    const done   = bulkQueue.filter(t => t.status === 'done').length;
+    const failed = bulkQueue.filter(t => t.status === 'error').length;
+    if (bulkStopped) {
+        toast(`Stopped — ${done} done, ${failed} failed`, 'info');
+    } else {
+        toast(`Bulk complete — ${done}/${bulkQueue.length} done${workerTokens.length > 1 ? ` (${workerTokens.length} accounts)` : ''}`, done === bulkQueue.length ? 'success' : 'info');
+    }
+}
+
+function bulkStop() {
+    bulkStopped = true;
+    bulkRunning = false;
+    hideImgLoading();
+    if (_bulkEtaInterval) { clearInterval(_bulkEtaInterval); _bulkEtaInterval = null; }
+    document.getElementById('bq-eta').textContent = '';
+    document.getElementById('bulk-stop-btn').style.display = 'none';
+    document.getElementById('bulk-run-btn').disabled = false;
+    document.getElementById('bulk-run-label').textContent = 'Run Queue';
+    bulkQueue.forEach(item => { if (item.status === 'pending') { item.status = 'error'; item.error = 'Stopped'; } });
+    bulkAccounts.forEach((_, i) => bulkSetAcctStatus(i, 'idle'));
+    renderBulkQueue();
+    renderBulkAccounts();
+}
+
+// ══════════ REFERENCE IMAGE ══════════
+function previewRefImage(input) {
+    if (!input.files[0]) return;
+    currentRefMediaId = null;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('ref-thumb').src = e.target.result;
+        const prev = document.getElementById('ref-image-preview');
+        prev.classList.remove('hidden');
+        prev.style.display = 'flex';
+        document.getElementById('ref-status').textContent = 'Ready to upload';
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function clearRefImage() {
+    document.getElementById('ref-image-input').value = '';
+    const prev = document.getElementById('ref-image-preview');
+    prev.classList.add('hidden');
+    prev.style.display = 'none';
+    currentRefMediaId = null;
+}
+
+// ══════════ VIDEO GENERATION ══════════
+function updateVideoMode() {
+    const mode = document.querySelector('input[name="vid-mode"]:checked').value;
+    document.getElementById('i2v-inputs').classList.toggle('hidden', mode !== 'i2v');
+}
+
+function updateVideoBackend() {
+    initVibesAccountsSSE();
+    checkVibesCookies();
+}
+
+async function checkMetaCookies() {
+    const status = document.getElementById('meta-cookies-status');
+    try {
+        const r = await fetch('/api/meta/cookies-status');
+        const d = await r.json();
+        const sel = document.getElementById('meta-cookies-select');
+        sel.innerHTML = '';
+        if (d.found.length) {
+            d.found.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o); });
+            status.textContent = '✓ found';
+            status.style.color = 'var(--success)';
+        } else {
+            const o = document.createElement('option'); o.value = 'meta-cookies.json'; o.textContent = 'meta-cookies.json (not found)'; sel.appendChild(o);
+            status.textContent = '✗ not found';
+            status.style.color = 'var(--error)';
+        }
+    } catch { status.textContent = 'error'; status.style.color = 'var(--error)'; }
+}
+
+async function checkDolaCookies() {
+    const status = document.getElementById('dola-cookies-status');
+    try {
+        const r = await fetch('/api/dola/cookies-status');
+        const d = await r.json();
+        const sel = document.getElementById('dola-cookies-select');
+        sel.innerHTML = '';
+        if (d.found.length) {
+            d.found.forEach(f => {
+                const o = document.createElement('option');
+                o.value = f; o.textContent = f;
+                sel.appendChild(o);
+            });
+            status.textContent = '✓ found';
+            status.style.color = 'var(--success)';
+        } else {
+            const o = document.createElement('option');
+            o.value = 'cookies.json'; o.textContent = 'cookies.json (not found)';
+            sel.appendChild(o);
+            status.textContent = '✗ not found';
+            status.style.color = 'var(--error)';
+        }
+    } catch (e) {
+        status.textContent = 'error';
+        status.style.color = 'var(--error)';
+    }
+}
+
+async function submitVideoViaDola(prompt, aspect) {
+    const cookiesFile = document.getElementById('dola-cookies-select').value;
+    const headless    = document.getElementById('dola-headless').checked;
+
+    const logBox   = document.getElementById('dola-log-box');
+    const logLines = document.getElementById('dola-log-lines');
+    logBox.style.display = 'block';
+    logLines.innerHTML = '';
+
+    const appendLog = (msg, color) => {
+        const line = document.createElement('div');
+        line.style.cssText = `margin-bottom:3px;color:${color || '#a1a1aa'}`;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logLines.appendChild(line);
+        logBox.scrollTop = logBox.scrollHeight;
+    };
+
+    const btn = document.getElementById('vid-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running…';
+
+    // Add a dola job card immediately
+    const jobId = 'dola-' + Date.now();
+    videoJobs.unshift({ id: jobId, prompt: prompt.slice(0, 60) + (prompt.length > 60 ? '…' : ''), mediaIds: [], status: 'pending', downloadUrl: null, startTime: Date.now(), backend: 'dola' });
+    renderVideoJobs();
+
+    try {
+        const response = await fetch('/api/dola/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'video', prompt, aspect, headless, cookiesFile }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(errStr(err.error, 'Server error'));
+        }
+
+        const reader  = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                let evt;
+                try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+                if (evt.log) {
+                    appendLog(evt.log);
+                } else if (evt.done) {
+                    appendLog(`Done! Saved as ${evt.fileName}`, '#10b981');
+                    const job = videoJobs.find(j => j.id === jobId);
+                    if (job) { job.status = 'done'; job.downloadUrl = evt.url; job.fileName = evt.fileName; }
+                    renderVideoJobs();
+                    galleryItems.unshift({ type: 'video', src: evt.url, prompt });
+                    toast('Dola video ready! ' + evt.fileName, 'success');
+                } else if (evt.error) {
+                    appendLog('ERROR: ' + evt.error, '#ef4444');
+                    const job = videoJobs.find(j => j.id === jobId);
+                    if (job) { job.status = 'failed'; job.error = evt.error; }
+                    renderVideoJobs();
+                    toast('Dola error: ' + evt.error, 'error');
+                }
+            }
+        }
+    } catch (e) {
+        appendLog('Fatal: ' + e.message, '#ef4444');
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.status = 'failed'; job.error = e.message; }
+        renderVideoJobs();
+        toast('Dola failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film"></i> Generate Video';
+    }
+}
+
+async function submitVideoViaMeta(prompt) {
+    const cookiesFile = document.getElementById('meta-cookies-select').value;
+    const headless    = document.getElementById('meta-headless').checked;
+
+    const logBox   = document.getElementById('dola-log-box');
+    const logLines = document.getElementById('dola-log-lines');
+    logBox.style.display = 'block';
+    logLines.innerHTML = '';
+    clearNetLog();
+    switchLogTab('terminal');
+
+    const appendLog = (msg, color) => {
+        const line = document.createElement('div');
+        line.style.cssText = `margin-bottom:3px;color:${color || '#a1a1aa'}`;
+        line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+        logLines.appendChild(line);
+        document.getElementById('logpane-terminal').scrollTop = 99999;
+    };
+
+    const btn = document.getElementById('vid-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running…';
+
+    const jobId = 'meta-' + Date.now();
+    videoJobs.unshift({ id: jobId, prompt: prompt.slice(0, 60) + (prompt.length > 60 ? '…' : ''), mediaIds: [], status: 'pending', downloadUrl: null, startTime: Date.now(), backend: 'meta' });
+    renderVideoJobs();
+
+    try {
+        const response = await fetch('/api/meta/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'video', prompt, headless, cookiesFile }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(errStr(err.error, 'Server error'));
+        }
+
+        const reader  = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                let evt;
+                try { evt = JSON.parse(line.slice(6)); } catch { continue; }
+                if (evt.log) {
+                    appendLog(evt.log);
+                } else if (evt.network) {
+                    appendNetRow(evt.network);
+                } else if (evt.done) {
+                    appendLog(`Done! Saved as ${evt.fileName}`, '#10b981');
+                    const job = videoJobs.find(j => j.id === jobId);
+                    if (job) { job.status = 'done'; job.downloadUrl = evt.url; job.fileName = evt.fileName; }
+                    renderVideoJobs();
+                    galleryItems.unshift({ type: 'video', src: evt.url, prompt });
+                    toast('Meta AI video ready! ' + evt.fileName, 'success');
+                } else if (evt.error) {
+                    appendLog('ERROR: ' + evt.error, '#ef4444');
+                    const job = videoJobs.find(j => j.id === jobId);
+                    if (job) { job.status = 'failed'; job.error = evt.error; }
+                    renderVideoJobs();
+                    toast('Meta AI error: ' + evt.error, 'error');
+                }
+            }
+        }
+    } catch (e) {
+        appendLog('Fatal: ' + e.message, '#ef4444');
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.status = 'failed'; job.error = e.message; }
+        renderVideoJobs();
+        toast('Meta AI failed: ' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film"></i> Generate Video';
+    }
+}
+
+
+let _vibesAcctsSSE = null;
+let _vibesAccts = [];
+
+function initVibesAccountsSSE() {
+    if (_vibesAcctsSSE) return;
+    _vibesAcctsSSE = new EventSource('/api/vibes-accounts/events');
+    _vibesAcctsSSE.onmessage = e => {
+        try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'snapshot') {
+                _vibesAccts = msg.accounts;
+            } else if (msg.type === 'account:change') {
+                const idx = _vibesAccts.findIndex(a => a.id === msg.account.id);
+                if (idx >= 0) _vibesAccts[idx] = msg.account; else _vibesAccts.push(msg.account);
+            } else if (msg.type === 'account:removed') {
+                _vibesAccts = _vibesAccts.filter(a => a.id !== msg.id);
+            }
+            renderVibesAccounts();
+        } catch (_) {}
+    };
+}
+
+function renderVibesAccounts() {
+    const list = document.getElementById('vibes-acct-list');
+    if (!list) return;
+    const readyCount = _vibesAccts.filter(a => a.status === 'ready').length;
+    const badge = document.getElementById('vibes-acct-badge');
+    const counter = document.getElementById('vibes-acct-count');
+    if (badge) badge.style.display = readyCount ? 'inline-flex' : 'none';
+    if (counter) counter.textContent = readyCount;
+
+    if (!_vibesAccts.length) {
+        list.innerHTML = '<div style=\"font-size:12px;color:var(--muted);padding:6px 0\">No accounts yet. Click \"Sign in with Meta\" to add one.</div>';
+        return;
+    }
+    list.innerHTML = _vibesAccts.map(a => {
+        const statusColor = {
+            ready: 'var(--success)', error: 'var(--error)', login_needed: 'var(--error)',
+            refreshing: '#f59e0b', logging_in: '#f59e0b', idle: 'var(--muted)'
+        }[a.status] || 'var(--muted)';
+        const label = (a.userInfo && (a.userInfo.name || a.userInfo.email)) || a.id;
+        return '<div style=\"display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;background:rgba(255,255,255,0.03);border:1px solid var(--border)\">' +
+            '<div style=\"width:7px;height:7px;border-radius:50%;background:' + statusColor + ';flex-shrink:0\"></div>' +
+            '<div style=\"flex:1;min-width:0\">' +
+                '<div style=\"font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis\">' + label + '</div>' +
+                '<div style=\"font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis\">' + (a.statusMsg || a.status) + '</div>' +
+            '</div>' +
+            '<button onclick=\"reAuthVibesAccount(\'' + a.id + '\')\" style=\"font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(234,179,8,0.3);background:rgba(234,179,8,0.08);color:#eab308;cursor:pointer\">Re-auth</button>' +
+            '<button onclick=\"removeVibesAccount(\'' + a.id + '\')\" style=\"font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.07);color:#f87171;cursor:pointer\">✕</button>' +
+        '</div>';
+    }).join('');
+}
+
+async function addVibesAccount() {
+    const btn = document.getElementById('vibes-add-acct-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class=\"fas fa-spinner fa-spin\" style=\"font-size:10px\"></i> Opening…';
+    try {
+        const r = await fetch('/api/vibes-accounts', { method: 'POST' });
+        const d = await r.json();
+        toast(d.msg || 'Chrome opening — sign in with Meta', 'success');
+    } catch (e) { toast('Error: ' + e.message, 'error'); }
+    finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class=\"fab fa-meta\" style=\"font-size:10px\"></i> Sign in with Meta';
+    }
+}
+
+async function removeVibesAccount(id) {
+    await fetch('/api/vibes-accounts/' + id, { method: 'DELETE' });
+}
+
+async function reAuthVibesAccount(id) {
+    await fetch('/api/vibes-accounts/' + id + '/reauth', { method: 'POST' });
+    toast('Chrome opening for re-auth', 'success');
+}
+
+async function checkVibesCookies() {
+    const status = document.getElementById('vibes-cookies-status');
+    try {
+        const r = await fetch('/api/vibes/cookies-status');
+        const d = await r.json();
+        const sel = document.getElementById('vibes-cookies-select');
+        sel.innerHTML = '';
+        if (d.found.length) {
+            d.found.forEach(f => { const o = document.createElement('option'); o.value = f; o.textContent = f; sel.appendChild(o); });
+            status.textContent = '✓ found';
+            status.style.color = 'var(--success)';
+        } else {
+            const o = document.createElement('option'); o.value = 'vibes-cookies.json'; o.textContent = 'vibes-cookies.json (not found)'; sel.appendChild(o);
+            status.textContent = '✗ not found';
+            status.style.color = 'var(--error)';
+        }
+    } catch { status.textContent = 'error'; status.style.color = 'var(--error)'; }
+}
+
+function parseVibsBulkPrompts(raw) {
+    return raw.split(/\n\s*\n/).map(s => {
+        // Strip "SCENE N — TITLE (Xs–Xs)" header line
+        s = s.replace(/^SCENE\s+\d+\s*[—\-–][^\n]*\n?/i, '');
+        // Strip "VISUAL PROMPT:" label line (with or without trailing colon)
+        s = s.replace(/^VISUAL\s+PROMPT\s*:?\s*\n?/im, '');
+        return s.trim();
+    }).filter(Boolean);
+}
+
+function onVibsBulkToggle() {
+    const on = document.getElementById('vibes-bulk-mode').checked;
+    document.getElementById('vibes-bulk-hint').style.display = on ? 'block' : 'none';
+    document.getElementById('vid-prompt').placeholder = on
+        ? 'Prompt one\n\nPrompt two\n\nPrompt three'
+        : 'Describe your video scene…';
+    onVibsBulkInput();
+}
+
+function onVibsBulkInput() {
+    const on = document.getElementById('vibes-bulk-mode').checked;
+    const countEl = document.getElementById('vibes-bulk-count');
+    if (!on) { countEl.style.display = 'none'; return; }
+    const raw = document.getElementById('vid-prompt').value;
+    const n = parseVibsBulkPrompts(raw).length;
+    countEl.style.display = n > 0 ? 'inline' : 'none';
+    countEl.textContent = n + (n === 1 ? ' prompt' : ' prompts');
+}
+
+async function submitVideoViaVibes(prompt, aspect, preferAccountId, _skipBtnReset, sceneIndex) {
+    const cookiesFile = document.getElementById('vibes-cookies-select').value;
+    const btn = document.getElementById('vid-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+    const jobId = 'vibes-' + Date.now();
+    videoJobs.unshift({ id: jobId, prompt: prompt.slice(0, 60) + (prompt.length > 60 ? '…' : ''), fullPrompt: prompt, aspect: aspect || '9:16', mediaIds: [], status: 'pending', downloadUrl: null, startTime: Date.now(), backend: 'vibes', vibesIds: [], vibesBatchId: null, cookiesFile, sceneIndex: sceneIndex || null, retryCount: 0 });
+    renderVideoJobs();
+
+    try {
+        const batchId = 'batch-' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+        const mgRequestId = 'www-' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+
+        const inputEntry = {
+            type: 'prompt',
+            value: prompt,
+            original_prompt: prompt,
+            config: {
+                directGeneration: true,
+                promptModel: 'gemini-2.5-flash',
+                aspectRatio: aspect || '9:16',
+                imageModel: 'midjen-base',
+                videoModel: 'midjen-short',
+                resolution: '720p',
+                batchVariation: true
+            }
+        };
+
+        const body = {
+            inputs: [inputEntry, inputEntry, inputEntry, inputEntry],
+            config: {
+                directGeneration: true,
+                promptModel: 'gemini-2.5-flash',
+                aspectRatio: aspect || '9:16',
+                imageModel: 'midjen-base',
+                videoModel: 'midjen-short',
+                resolution: '720p',
+                batchVariation: true,
+                generationType: 't2v'
+            },
+            batchId,
+            mg_request_id: mgRequestId,
+            cookiesFile,
+            ...(preferAccountId ? { preferAccountId } : {})
+        };
+
+        const r = await fetch('/api/vibes/generate/videos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        const data = await r.json();
+        if (!r.ok) throw new Error(errStr(data.error, 'HTTP ' + r.status));
+
+        // If videos are already in the response, show them immediately
+        const immediateUrls = (data.videos || data.results || []).map(v => v.url || v.videoUrl || v.downloadUrl).filter(Boolean);
+        if (immediateUrls.length) {
+            const job = videoJobs.find(j => j.id === jobId);
+            if (job) { job.status = 'done'; job.downloadUrl = immediateUrls[0]; job.vibesUrls = immediateUrls; }
+            renderVideoJobs();
+            toast('Vibes.ai video ready!', 'success');
+            if (!_skipBtnReset) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-film"></i> Generate Video'; }
+            const picked = immediateUrls[Math.floor(Math.random() * immediateUrls.length)];
+            saveVibesScene(picked, `scene${sceneIndex || 1}.mp4`, jobId);
+            return;
+        }
+
+        // needsPolling — store IDs and start polling loop
+        const ids = data.videoGenEntIds || [];
+        if (!ids.length) throw new Error('No video IDs returned: ' + JSON.stringify(data).slice(0, 200));
+
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.vibesIds = ids; job.vibesBatchId = data.batchId || batchId; job.vibesAccountId = data.usedAccountId || null; job.status = 'pending'; job.vibesInfo = ids.length + ' clips queued'; }
+        renderVideoJobs();
+        toast('Vibes.ai generating — polling for results…', 'success');
+        if (!_skipBtnReset) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-film"></i> Generate Video'; }
+
+        // Poll every 8 seconds for up to 5 minutes
+        startVibesPoll(jobId, data.batchId || batchId, cookiesFile, job ? job.vibesAccountId : null);
+
+    } catch (e) {
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.status = 'failed'; job.error = e.message; }
+        renderVideoJobs();
+        toast('Vibes.ai error: ' + e.message, 'error');
+        if (!_skipBtnReset) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-film"></i> Generate Video'; }
+    }
+}
+
+async function startVibesPoll(jobId, batchId, cookiesFile, accountId) {
+    const maxAttempts = 38; // ~5 min at 8s intervals
+    const maxRetries = 5;   // auto-resubmit up to 5 times if batch dies
+    let attempt = 0;
+    let consecutive500 = 0;
+
+    const interval = setInterval(async () => {
+        attempt++;
+        const job = videoJobs.find(j => j.id === jobId);
+        if (!job || job.status === 'failed' || job.status === 'done') { clearInterval(interval); return; }
+
+        try {
+            const r = await fetch('/api/vibes/poll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ batchId, cookiesFile, accountId })
+            });
+            const data = await r.json();
+
+            if (!r.ok) {
+                console.warn('[Vibes Poll]', r.status, data);
+                const errMsg = (data?.error || '').toLowerCase();
+                const isBatchGone = errMsg.includes('not found') || errMsg.includes('fetch generation batch');
+
+                if (r.status === 500 && !isBatchGone) {
+                    // Transient 500 — keep trying
+                    consecutive500++;
+                    if (consecutive500 < 4) return;
+                }
+
+                // Batch is dead (404, or repeated 500, or explicit "not found") — auto-resubmit
+                clearInterval(interval);
+                const retries = job.retryCount || 0;
+                if (retries < maxRetries && job.fullPrompt) {
+                    job.retryCount = retries + 1;
+                    job.status = 'pending';
+                    job.vibesInfo = `Batch died — resubmitting (attempt ${job.retryCount}/${maxRetries})…`;
+                    renderVideoJobs();
+                    toast(`Vibes.ai batch died — auto-resubmitting (${job.retryCount}/${maxRetries})…`, 'success');
+                    // Re-use the preferred account that originally succeeded, or fall back
+                    await resubmitVibesJob(job, cookiesFile, accountId);
+                } else {
+                    job.status = 'failed';
+                    job.error = retries >= maxRetries
+                        ? `Failed after ${maxRetries} resubmissions — check your accounts`
+                        : 'Batch expired — generate a new video';
+                    renderVideoJobs();
+                    toast(job.error, 'error');
+                }
+                return;
+            }
+
+            consecutive500 = 0;
+
+            // vibes.ai returns { batch: { content: [{videoUrl, thumbnailUrl, ...}], isComplete, needsPolling } }
+            const batch = data.batch || {};
+            const items = batch.content || [];
+            const readyUrls = items.map(v => v.videoUrl).filter(Boolean);
+            const thumbUrls = items.map(v => v.thumbnailUrl).filter(Boolean);
+            const pendingCount = items.filter(v => !v.videoUrl).length;
+            const isDone = pendingCount === 0 || !batch.needsPolling || batch.isComplete;
+
+            if (readyUrls.length) {
+                const forceFinish = attempt >= maxAttempts && pendingCount > 0;
+                const allDone = isDone || forceFinish;
+                job.status = allDone ? 'done' : 'pending';
+                job.downloadUrl = readyUrls[0];
+                job.vibesUrls = readyUrls;
+                job.vibesThumbs = thumbUrls;
+                job.vibesInfo = readyUrls.length + ' ready' + (pendingCount > 0 && !forceFinish ? ', ' + pendingCount + ' pending' : '');
+                renderVideoJobs();
+                if (allDone) {
+                    clearInterval(interval);
+                    toast('Vibes.ai — ' + readyUrls.length + ' video' + (readyUrls.length > 1 ? 's' : '') + ' ready!', 'success');
+                    const si = job.sceneIndex || 1;
+                    saveVibesScene(readyUrls[0], `scene${si}.mp4`, job.id);
+                }
+            } else if (attempt >= maxAttempts) {
+                clearInterval(interval);
+                // Max attempts reached with no videos — resubmit if retries remain
+                const retries = job.retryCount || 0;
+                if (retries < maxRetries && job.fullPrompt) {
+                    job.retryCount = retries + 1;
+                    job.status = 'pending';
+                    job.vibesInfo = `Timed out — resubmitting (attempt ${job.retryCount}/${maxRetries})…`;
+                    renderVideoJobs();
+                    toast(`Vibes.ai timed out — auto-resubmitting (${job.retryCount}/${maxRetries})…`, 'success');
+                    await resubmitVibesJob(job, cookiesFile, accountId);
+                } else {
+                    job.status = 'failed';
+                    job.error = 'Timed out — no videos generated after all retries';
+                    renderVideoJobs();
+                    toast('Vibes.ai timed out after all retries', 'error');
+                }
+            }
+        } catch (e) {
+            console.warn('[Vibes Poll] error:', e.message);
+        }
+    }, 8000);
+}
+
+async function resubmitVibesJob(job, cookiesFile, preferAccountId) {
+    try {
+        const batchId = 'batch-' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+        const mgRequestId = 'www-' + ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16));
+        const aspect = job.aspect || '9:16';
+        const prompt = job.fullPrompt;
+
+        const inputEntry = {
+            type: 'prompt', value: prompt, original_prompt: prompt,
+            config: { directGeneration: true, promptModel: 'gemini-2.5-flash', aspectRatio: aspect, imageModel: 'midjen-base', videoModel: 'midjen-short', resolution: '720p', batchVariation: true }
+        };
+        const body = {
+            inputs: [inputEntry, inputEntry, inputEntry, inputEntry],
+            config: { directGeneration: true, promptModel: 'gemini-2.5-flash', aspectRatio: aspect, imageModel: 'midjen-base', videoModel: 'midjen-short', resolution: '720p', batchVariation: true, generationType: 't2v' },
+            batchId, mg_request_id: mgRequestId, cookiesFile,
+            ...(preferAccountId ? { preferAccountId } : {})
+        };
+
+        const r = await fetch('/api/vibes/generate/videos', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error((data?.error?.detail || data?.error || 'HTTP ' + r.status));
+
+        const ids = data.videoGenEntIds || [];
+        if (!ids.length) throw new Error('No video IDs in resubmit response');
+
+        job.vibesIds = ids;
+        job.vibesBatchId = data.batchId || batchId;
+        job.vibesAccountId = data.usedAccountId || preferAccountId || null;
+        job.status = 'pending';
+        job.vibesInfo = ids.length + ' clips queued (resubmit)';
+        renderVideoJobs();
+        startVibesPoll(job.id, job.vibesBatchId, cookiesFile, job.vibesAccountId);
+    } catch (e) {
+        job.status = 'failed';
+        job.error = 'Resubmit failed: ' + e.message;
+        renderVideoJobs();
+        toast('Vibes.ai resubmit failed: ' + e.message, 'error');
+    }
+}
+
+async function submitVideo() {
+    const prompt = document.getElementById('vid-prompt').value.trim();
+    if (!prompt) { toast('Enter a prompt', 'error'); return; }
+    const aspect = document.getElementById('vid-aspect').value;
+
+    // Route to Veo AI Free if selected
+    const vidBackend = document.querySelector('input[name="vid-backend"]:checked');
+    if (vidBackend && vidBackend.value === 'veo-free') {
+        return submitVideoViaVeoFree(prompt, aspect);
+    }
+
+    const isBulk = document.getElementById('vibes-bulk-mode').checked;
+    if (isBulk) {
+        const prompts = parseVibsBulkPrompts(prompt);
+        if (!prompts.length) { toast('Enter at least one prompt', 'error'); return; }
+        const readyAccts = _vibesAccts.filter(a => a.status === 'ready' && a.hasCookie);
+        const btn = document.getElementById('vid-submit-btn');
+        toast(`Queuing ${prompts.length} Vibes job${prompts.length > 1 ? 's' : ''}${readyAccts.length > 1 ? ` across ${readyAccts.length} accounts` : ''}…`, 'success');
+        for (let i = 0; i < prompts.length; i++) {
+            const acct = readyAccts.length ? readyAccts[i % readyAccts.length] : null;
+            const isLast = i === prompts.length - 1;
+            if (!isLast && btn) btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${i + 1}/${prompts.length}…`;
+            await submitVideoViaVibes(prompts[i], aspect, acct ? acct.id : null, /*skipBtnReset*/ true, /*sceneIndex*/ i + 1);
+            if (!isLast) await new Promise(r => setTimeout(r, 400));
+        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-film"></i> Generate Video'; }
+        return;
+    }
+    return submitVideoViaVibes(prompt, aspect);
+}
+
+function getVibesFolder() {
+    return (document.getElementById('vibes-folder')?.value?.trim() || 'Vibes_videos');
+}
+
+async function saveVibesScene(url, filename, jobId) {
+    const folder = getVibesFolder();
+    try {
+        const resp = await fetch('/api/save/video', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, filename, folder })
+        });
+        const data = await resp.json();
+        if (!data.ok) throw new Error(errStr(data.error, 'Save failed'));
+        toast(`Saved → Downloads/${folder}/${data.filename}`, 'success');
+    } catch (e) {
+        toast('Save failed: ' + e.message, 'error');
+    }
+}
+
+async function saveAllVibesScenes(jobId) {
+    const job = videoJobs.find(j => j.id === jobId);
+    if (!job?.vibesUrls?.length) return;
+    const folder = getVibesFolder();
+    toast(`Saving ${job.vibesUrls.length} scenes to Downloads/${folder}…`, 'success');
+    const si = job.sceneIndex || 1;
+    for (let i = 0; i < job.vibesUrls.length; i++) {
+        const name = job.vibesUrls.length === 1 ? `scene${si}.mp4` : `scene${si}_v${i+1}.mp4`;
+        await saveVibesScene(job.vibesUrls[i], name, jobId);
+    }
+}
+
+function renderVideoJobs() {
+    const container = document.getElementById('video-jobs');
+    if (!videoJobs.length) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-icon">🎬</div><p style="font-size:14px;color:var(--muted)">No jobs yet.</p></div>';
+        return;
+    }
+    container.innerHTML = videoJobs.map(job => {
+        const backendTag = job.backend === 'dola'
+            ? `<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(6,182,212,0.15);border:1px solid rgba(6,182,212,0.3);color:var(--accent);margin-left:6px">Dola</span>`
+            : job.backend === 'vibes'
+            ? `<span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.3);color:#eab308;margin-left:6px">Vibes</span>`
+            : '';
+        const idLine = job.backend === 'dola'
+            ? (job.fileName || 'running…')
+            : job.backend === 'vibes'
+            ? (job.vibesInfo || (job.vibesIds?.length ? job.vibesIds.length + ' clips queued' : 'submitted'))
+            : `IDs: ${job.mediaIds?.join(', ')?.slice(0, 40) || 'N/A'}`;
+        const dlAttr = job.backend === 'dola' ? `download="${job.fileName || 'video.mp4'}"` : 'download="video.mp4"';
+        // Vibes jobs: render inline video grid instead of plain card
+        if (job.backend === 'vibes') {
+            const _si = job.sceneIndex || 1;
+            const videoGrid = job.vibesUrls?.length
+                ? job.vibesUrls.map((u, i) => {
+                    const fname = job.vibesUrls.length === 1 ? `scene${_si}.mp4` : `scene${_si}_v${i+1}.mp4`;
+                    return `
+                    <div style="background:#000;border-radius:10px;overflow:hidden;border:1px solid rgba(234,179,8,0.2);display:flex;flex-direction:column">
+                        <video src="${u}" controls playsinline preload="metadata"
+                            style="width:100%;display:block;max-height:180px;object-fit:contain;background:#000"
+                            poster="${job.vibesThumbs?.[i] || ''}"></video>
+                        <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:rgba(234,179,8,0.05)">
+                            <span style="font-size:11px;font-weight:700;color:#eab308">Scene ${_si}${job.vibesUrls.length > 1 ? ' v' + (i+1) : ''}</span>
+                            <button onclick="saveVibesScene('${u}','${fname}','${job.id}')"
+                                style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.4);color:#eab308;cursor:pointer;font-family:inherit">
+                                <i class="fas fa-download"></i> Save
+                            </button>
+                        </div>
+                    </div>`;}).join('')
+                : '';
+            const saveAllBtn = job.vibesUrls?.length
+                ? `<button onclick="saveAllVibesScenes('${job.id}')"
+                        style="display:flex;align-items:center;gap:5px;padding:5px 13px;border-radius:8px;font-size:12px;font-weight:700;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.4);color:#eab308;cursor:pointer;font-family:inherit">
+                        <i class="fas fa-download"></i> Save All
+                    </button>`
+                : '';
+            return `
+            <div class="job-card ${job.status}" style="flex-direction:column;align-items:stretch;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);flex:1">${job.prompt}${backendTag}</p>
+                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+                        ${saveAllBtn}
+                        <span class="job-status ${job.status}">${job.status}</span>
+                    </div>
+                </div>
+                <p style="font-size:12px;color:var(--muted);margin-top:-6px">${idLine}</p>
+                ${job.status === 'pending' && !videoGrid ? '<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>' : ''}
+                ${job.error ? `<p style="font-size:12px;color:var(--error)">${job.error}</p>` : ''}
+                ${videoGrid ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px">${videoGrid}</div>` : ''}
+            </div>`;
+        }
+
+        // Veo-free: show inline video player + download button when done
+        if (job.backend === 'veo-free' && job.downloadUrl) {
+            const proxyUrl = '/api/veo/video?url=' + encodeURIComponent(job.downloadUrl);
+            return `
+            <div class="job-card ${job.status}" style="flex-direction:column;align-items:stretch;gap:10px">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+                    <p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${job.prompt}
+                        <span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;margin-left:6px">Veo</span>
+                    </p>
+                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                        <span class="job-status ${job.status}">${job.status}</span>
+                        <a href="${proxyUrl}" download="veo-video.mp4"
+                            style="display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:var(--success)">
+                            <i class="fas fa-download"></i> Download
+                        </a>
+                        <a href="${job.downloadUrl}" target="_blank"
+                            style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#22c55e">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                ${job.error ? `<p style="font-size:12px;color:var(--error)">${job.error}</p>` : ''}
+                <div style="background:#000;border-radius:10px;overflow:hidden;border:1px solid rgba(34,197,94,0.2)">
+                    <video src="${proxyUrl}" controls playsinline preload="auto"
+                        style="width:100%;display:block;max-height:280px;object-fit:contain;background:#000"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='block'"></video>
+                    <p style="display:none;padding:12px;font-size:12px;color:var(--muted);text-align:center">
+                        Video expired — URLs last ~60s. <a href="${job.downloadUrl}" target="_blank" style="color:#22c55e">Try direct link</a>
+                    </p>
+                </div>
+            </div>`;
+        }
+        if (job.backend === 'veo-free') {
+            return `
+            <div class="job-card ${job.status}">
+                <div style="flex:1;min-width:0">
+                    <p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${job.prompt}
+                        <span style="font-size:10px;padding:2px 7px;border-radius:999px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;margin-left:6px">Veo</span>
+                    </p>
+                    <p style="font-size:12px;margin-top:2px;color:var(--muted)">${job.veoInfo || 'Generating…'}</p>
+                    ${job.status === 'pending' ? '<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>' : ''}
+                    ${job.error ? `<p style="font-size:12px;margin-top:4px;color:var(--error)">${job.error}</p>` : ''}
+                </div>
+                <span class="job-status ${job.status}">${job.status}</span>
+            </div>`;
+        }
+
+        const vibesDlLinks = '';
+        return `
+        <div class="job-card ${job.status}">
+            <div style="flex:1;min-width:0">
+                <p style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)">${job.prompt}${backendTag}</p>
+                <p style="font-size:12px;margin-top:2px;color:var(--muted)">${idLine}</p>
+                ${job.status === 'pending' ? '<div class="progress-bar-track"><div class="progress-bar-fill"></div></div>' : ''}
+                ${job.error ? `<p style="font-size:12px;margin-top:4px;color:var(--error)">${job.error}</p>` : ''}
+            </div>
+            <span class="job-status ${job.status}">${job.status}</span>
+            ${job.downloadUrl ? `<a href="${job.downloadUrl}" ${dlAttr}
+                style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:700;text-decoration:none;background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:var(--success)">
+                <i class="fas fa-download"></i> DL
+            </a>` : ''}
+        </div>`;
+    }).join('');
+}
+
+function startPolling() {
+    if (pollInterval) return;
+    pollInterval = setInterval(pollVideos, 15000);
+}
+
+async function pollVideos() {
+    const pending = videoJobs.filter(j => j.status === 'pending');
+    if (!pending.length) { clearInterval(pollInterval); pollInterval = null; return; }
+
+    for (const job of pending) {
+        try {
+            const data = await apiFetch('/api/poll/video', { token: job.token, mediaIds: job.mediaIds });
+            for (const r of (data.results || [])) {
+                if (r.done) {
+                    job.status = 'done';
+                    if (r.downloadUrl) job.downloadUrl = r.downloadUrl;
+                    galleryItems.unshift({ type: 'video', src: r.downloadUrl, prompt: job.prompt });
+                } else if (r.failed) {
+                    job.status = 'failed';
+                    job.error = errStr(r.error, 'Generation failed');
+                }
+            }
+        } catch (e) {}
+    }
+    renderVideoJobs();
+}
+
+// ══════════ VOICE / TTS ══════════
+function renderVoiceGrid() {
+    if (document.getElementById('voice-grid').children.length > 0) return;
+    fetch('/api/voice/list').then(r => r.json()).then(data => {
+        document.getElementById('voice-grid').innerHTML = (data.voices || []).map(v =>
+            `<button class="voice-btn ${v === selectedVoice ? 'selected' : ''}" onclick="selectVoice('${v}', this)">${v}</button>`
+        ).join('');
+    });
+}
+
+function selectVoice(name, btn) {
+    selectedVoice = name;
+    document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+}
+
+function updateTtsCount(el) {
+    document.getElementById('tts-count').textContent = el.value.length;
+}
+
+async function generateVoice() {
+    const text = document.getElementById('tts-text').value.trim();
+    if (!text) { toast('Enter text to speak', 'error'); return; }
+    if (!requireAuth()) return;
+
+    const ld = document.getElementById('tts-loading');
+    ld.classList.remove('hidden');
+    ld.style.display = 'flex';
+    document.getElementById('tts-empty').classList.add('hidden');
+    const res = document.getElementById('tts-result');
+    res.classList.add('hidden');
+    res.style.display = 'none';
+
+    try {
+        const data = await apiFetch('/api/generate/voice', { text, voice: selectedVoice, tokens: apiKeys });
+        if (!data.audioData) throw new Error('No audio returned');
+
+        const mime = data.mimeType || 'audio/mpeg';
+        const bytes = atob(data.audioData);
+        const arr = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+        lastTtsBlob = new Blob([arr], { type: mime });
+        const url = URL.createObjectURL(lastTtsBlob);
+
+        document.getElementById('tts-audio').src = url;
+        ld.classList.add('hidden');
+        ld.style.display = 'none';
+        res.classList.remove('hidden');
+        res.style.display = 'flex';
+
+        // Add to history
+        const hist = document.getElementById('tts-history');
+        const entry = document.createElement('div');
+        entry.style.cssText = 'padding:12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);font-size:12px';
+        entry.innerHTML = `<strong style="color:var(--accent)">${selectedVoice}:</strong> <span style="color:var(--muted)">${text.slice(0, 50)}…</span><audio controls class="w-full mt-2" src="${url}"></audio>`;
+        hist.prepend(entry);
+
+        galleryItems.unshift({ type: 'audio', src: url, prompt: text.slice(0, 60) });
+    } catch (e) {
+        ld.classList.add('hidden');
+        ld.style.display = 'none';
+        document.getElementById('tts-empty').classList.remove('hidden');
+        toast('❌ ' + e.message, 'error');
+    }
+}
+
+function downloadAudio() {
+    if (!lastTtsBlob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(lastTtsBlob);
+    a.download = `voice-${selectedVoice}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+// ══════════ GALLERY ══════════
+function renderGallery() {
+    const grid = document.getElementById('gallery-grid');
+    const empty = document.getElementById('gallery-empty');
+    if (!galleryItems.length) { grid.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    grid.innerHTML = galleryItems.map((item, i) => {
+        if (item.type === 'image') {
+            return `<div class="gallery-item">
+                <img src="${item.src}" class="w-full object-cover block" alt="Generated image">
+                <div style="padding:12px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+                    <p style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1">${item.prompt}</p>
+                    <a href="${item.src}" download="img-${i}.png"
+                       style="font-size:12px;padding:5px 10px;border-radius:7px;font-weight:700;flex-shrink:0;text-decoration:none;background:rgba(124,58,237,0.2);color:var(--primary2);border:1px solid rgba(124,58,237,0.3)">↓</a>
+                </div>
+            </div>`;
+        }
+        if (item.type === 'audio') {
+            return `<div class="gallery-item" style="padding:16px">
+                <div style="font-size:36px;text-align:center;margin-bottom:12px">🎵</div>
+                <audio controls class="w-full mb-2" src="${item.src}"></audio>
+                <p style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.prompt}</p>
+            </div>`;
+        }
+        if (item.type === 'video' && item.src) {
+            return `<div class="gallery-item">
+                <video src="${item.src}" controls class="w-full block"></video>
+                <div style="padding:12px">
+                    <p style="font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.prompt}</p>
+                </div>
+            </div>`;
+        }
+        return '';
+    }).join('');
+}
+
+// ══════════ UTILS ══════════
+async function apiFetch(path, body, method) {
+    const m = method || 'POST';
+    const opts = { method: m, headers: { 'Content-Type': 'application/json' } };
+    if (body && m !== 'DELETE') opts.body = JSON.stringify(body);
+    const resp = await fetch(path, opts);
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(errStr(data.error, `HTTP ${resp.status}`));
+    return data;
+}
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = e => resolve(e.target.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+
+// ══════════ OAUTH ══════════
+let authState = { configured: false, authenticated: false };
+
+async function checkAuthStatus() {
+    try {
+        const r = await fetch('/auth/status');
+        authState = await r.json();
+    } catch (_) { authState = { status: 'error', hasToken: false }; }
+
+    const pill = document.getElementById('auth-pill');
+    const { status, hasToken, ageMin, expiresIn, msg } = authState;
+
+    const pillConfigs = {
+        ready:        { cls: 'ready',         html: `<span class="pulse-dot"></span> Token ready (${expiresIn}m) &nbsp;<button onclick="signOut()" style="font-size:11px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:6px;padding:2px 8px;cursor:pointer;color:inherit;font-weight:600">Logout</button>` },
+        refreshing:   { cls: 'refreshing',    html: '<span class="pulse-dot"></span> Refreshing…' },
+        logging_in:   { cls: 'refreshing',    html: '<span class="pulse-dot"></span> Logging in…' },
+        login_needed: { cls: 'login_needed',  html: '<span class="pulse-dot"></span> <button onclick="triggerLogin()" style="font-weight:700;text-decoration:underline;background:none;border:none;cursor:pointer;color:inherit">Sign in with Google</button>' },
+        error:        { cls: 'error',         html: '<span class="pulse-dot"></span> Auth error — <button onclick="triggerLogin()" style="text-decoration:underline;background:none;border:none;cursor:pointer;color:inherit">retry</button>' },
+        idle:         { cls: 'idle',          html: '<span class="pulse-dot"></span> Starting…' },
+    };
+
+    const cfg = pillConfigs[status] || pillConfigs.idle;
+    pill.className = `status-pill ${cfg.cls}`;
+    pill.innerHTML = cfg.html;
+    pill.classList.remove('hidden');
+
+    // Hide auth banner once token is ready
+    if (hasToken) {
+        document.getElementById('auth-banner').classList.add('hidden');
+    } else if (!apiKeys.length) {
+        document.getElementById('auth-banner').classList.remove('hidden');
+    }
+
+    renderAllKeyStatuses();
+
+    // Setup page
+    const statusEl = document.getElementById('setup-status');
+    if (statusEl) {
+        const statusText = {
+            ready:        `<span style="color:var(--success);font-weight:600">✓ Token active</span> — expires in ~${expiresIn} min. Auto-refreshes every 50 min.`,
+            refreshing:   '<span style="color:var(--warning);font-weight:600">⟳ Refreshing token…</span>',
+            logging_in:   '<span style="color:var(--accent);font-weight:600">⟳ Browser login in progress…</span>',
+            login_needed: '<span style="color:#fb923c;font-weight:600">Login required</span> — <button onclick="triggerLogin()" style="text-decoration:underline;font-weight:700;background:none;border:none;cursor:pointer;color:inherit">click here to open Google login</button>',
+            error:        `<span style="color:var(--error);font-weight:600">Error: ${msg}</span>`,
+        };
+        statusEl.innerHTML = statusText[status] || '<span style="color:var(--muted)">Starting…</span>';
+        if (status === 'ready') document.getElementById('logout-btn')?.classList.remove('hidden');
+    }
+}
+
+async function triggerLogin() {
+    await fetch('/auth/login', { method: 'POST' });
+    // Poll status until logged in
+    const poll = setInterval(async () => {
+        await checkAuthStatus();
+        if (authState.hasToken) clearInterval(poll);
+    }, 3000);
+}
+
+async function signOut() {
+    await fetch('/auth/logout', { method: 'POST' });
+    await checkAuthStatus();
+}
+
+// Handle redirect from OAuth callback
+function handleOAuthRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const auth = params.get('auth');
+    if (auth === 'success') {
+        history.replaceState({}, '', '/');
+        showTab('image');
+        checkAuthStatus();
+    } else if (auth === 'error') {
+        const reason = params.get('reason') || 'unknown error';
+        history.replaceState({}, '', '/');
+        toast('Sign-in failed: ' + reason, 'error');
+    }
+}
+
+// ══════════ BOOKMARKLET ══════════
+function setupBookmarklet() {
+    // Intercepts both fetch() and XHR calls to aisandbox-pa.googleapis.com,
+    // extracts the Authorization header, and posts it to localhost:3000.
+    const code = `javascript:(function(){
+if(window.__doodlegen_active){alert('Already watching! Generate an image now.');return;}
+window.__doodlegen_active=true;
+var SEND='http://localhost:3000/auth/token';
+function sendTok(t){
+    t=t.replace(/^Bearer /i,'');
+    if(!t.startsWith('ya29'))return;
+    fetch(SEND,{method:'POST',mode:'cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:t})})
+    .then(function(r){return r.json();})
+    .then(function(){
+        window.__doodlegen_active=false;
+        alert('Token sent to DoodleGen successfully! Switch back to DoodleGen and generate.');
+    })
+    .catch(function(e){alert('Could not reach DoodleGen server: '+e.message+'. Make sure node server.js is running.');});
+}
+var _fetch=window.fetch;
+window.fetch=function(url,opts){
+    if(typeof url==='string'&&url.includes('aisandbox-pa')){
+        var auth=(opts&&opts.headers&&(opts.headers['Authorization']||opts.headers['authorization']))||'';
+        if(auth.startsWith('ya29')||auth.startsWith('Bearer ya29')){
+            sendTok(auth);
+            window.fetch=_fetch;
+        }
+    }
+    return _fetch.apply(this,arguments);
+};
+var _xhrOpen=XMLHttpRequest.prototype.open;
+var _xhrSet=XMLHttpRequest.prototype.setRequestHeader;
+XMLHttpRequest.prototype.open=function(){this.__url=arguments[1];return _xhrOpen.apply(this,arguments);};
+XMLHttpRequest.prototype.setRequestHeader=function(h,v){
+    if((this.__url||'').includes('aisandbox-pa')&&/^authorization$/i.test(h)&&(v.startsWith('ya29')||v.startsWith('Bearer ya29'))){
+        sendTok(v);
+        XMLHttpRequest.prototype.open=_xhrOpen;
+        XMLHttpRequest.prototype.setRequestHeader=_xhrSet;
+    }
+    return _xhrSet.apply(this,arguments);
+};
+var b=document.createElement('div');
+b.style='position:fixed;top:0;left:0;right:0;background:#1d4ed8;color:#fff;padding:10px 16px;font:bold 14px sans-serif;z-index:99999;text-align:center';
+b.id='__dg_banner';
+b.innerHTML='DoodleGen: Watching for token... Generate any image now. <button onclick="document.getElementById(\\'__dg_banner\\').remove();window.__doodlegen_active=false;window.fetch=_fetch;" style="margin-left:16px;background:#fff;color:#1d4ed8;border:none;padding:4px 10px;cursor:pointer;font-weight:bold">Cancel</button>';
+document.body.prepend(b);
+})();`;
+    const el = document.getElementById('bookmarklet-link');
+    if (el) el.href = code;
+}
+
+async function checkBookmarkletToken() {
+    try {
+        const r = await fetch('/auth/bookmarklet-status');
+        const d = await r.json();
+        const statusEl = document.getElementById('bk-token-status');
+        if (!statusEl) return;
+        if (d.hasToken && !d.expired) {
+            statusEl.innerHTML = `<span style="color:var(--success);font-weight:600">✓ Token active (${d.ageMin}m old, expires in ~${58 - d.ageMin}m)</span>`;
+        } else if (d.hasToken && d.expired) {
+            statusEl.innerHTML = '<span style="color:var(--error);font-weight:600">⚠ Token expired — use bookmarklet again</span>';
+        } else {
+            statusEl.innerHTML = '<span style="color:var(--muted)">No token yet — use bookmarklet or paste manually</span>';
+        }
+    } catch (_) {}
+}
+
+// ══════════ INIT ══════════
+window.onload = function() {
+    renderTokenCount();
+    renderAllKeyStatuses();
+    handleOAuthRedirect();
+    checkAuthStatus();
+    setupBookmarklet();
+    // Poll every 5s until token is ready, then every 2min to track expiry
+    const statusPoll = setInterval(async () => {
+        await checkAuthStatus();
+    }, 5000);
+    // After 2 min slow down to every 60s
+    setTimeout(() => {
+        clearInterval(statusPoll);
+        setInterval(checkAuthStatus, 60000);
+    }, 120000);
+};
+
+// ─── Network Log helpers ──────────────────────────────────────────────────────
+let _netRows = [];   // raw event objects
+
+function switchLogTab(tab) {
+    const isNet = tab === 'network';
+    document.getElementById('logpane-terminal').style.display = isNet ? 'none' : 'block';
+    document.getElementById('logpane-network').style.display  = isNet ? 'block' : 'none';
+    document.getElementById('logtab-terminal').style.background = isNet ? 'transparent' : 'rgba(255,255,255,0.06)';
+    document.getElementById('logtab-terminal').style.color      = isNet ? 'var(--muted)' : '#e4e4e7';
+    document.getElementById('logtab-network').style.background  = isNet ? 'rgba(255,255,255,0.06)' : 'transparent';
+    document.getElementById('logtab-network').style.color       = isNet ? '#e4e4e7' : 'var(--muted)';
+}
+
+function clearNetLog() {
+    _netRows = [];
+    const rows = document.getElementById('net-log-rows');
+    if (rows) rows.innerHTML = '';
+    const empty = document.getElementById('net-empty');
+    if (empty) empty.style.display = 'block';
+    const cnt = document.getElementById('net-count');
+    if (cnt) cnt.textContent = '0';
+}
+
+const METHOD_COLORS = { GET:'#60a5fa', POST:'#34d399', PUT:'#fbbf24', DELETE:'#f87171', PATCH:'#a78bfa', OPTIONS:'#6b7280' };
+
+function appendNetRow(ev) {
+    if (ev.kind !== 'request' && ev.kind !== 'response') return;
+    if (ev.kind === 'request') {
+        _netRows.push(ev);
+        renderNetRows();
+    } else {
+        // merge status into matching request row
+        const req = _netRows.find(r => r.id === ev.id);
+        if (req) { req.status = ev.status; req.statusText = ev.statusText; req.mimeType = ev.mimeType; req.responseHeaders = ev.headers; }
+        renderNetRows();
+    }
+}
+
+function renderNetRows() {
+    const filter = (document.getElementById('net-filter') || {}).value || '';
+    const fLower = filter.toLowerCase();
+    const rows = document.getElementById('net-log-rows');
+    const empty = document.getElementById('net-empty');
+    if (!rows) return;
+
+    const visible = fLower ? _netRows.filter(r => r.url.toLowerCase().includes(fLower)) : _netRows;
+    document.getElementById('net-count').textContent = _netRows.length;
+    empty.style.display = visible.length ? 'none' : 'block';
+
+    rows.innerHTML = visible.map((ev, i) => {
+        const methodColor = METHOD_COLORS[ev.method] || '#a1a1aa';
+        const statusColor = ev.status >= 400 ? '#f87171' : ev.status >= 300 ? '#fbbf24' : ev.status ? '#34d399' : '#6b7280';
+        const shortUrl = ev.url.replace(/^https?:\/\//, '').slice(0, 90);
+        const ts = new Date(ev.ts).toLocaleTimeString();
+        return `<div onclick="showNetDetail(${i})" style="display:flex;align-items:center;gap:8px;padding:5px 12px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+            <span style="width:44px;flex-shrink:0;color:${methodColor};font-weight:700;font-size:10px">${ev.method || '?'}</span>
+            <span style="width:36px;flex-shrink:0;color:${statusColor};font-size:10px">${ev.status || '…'}</span>
+            <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#a1a1aa;font-size:11px" title="${ev.url}">${shortUrl}</span>
+            <span style="flex-shrink:0;font-size:10px;color:#52525b">${ts}</span>
+        </div>`;
+    }).join('');
+}
+
+function filterNetLog() { renderNetRows(); }
+
+function exportNetLog() {
+    const blob = new Blob([JSON.stringify(_netRows, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `meta-network-${Date.now()}.json`;
+    a.click();
+}
+
+function showNetDetail(idx) {
+    const filter = (document.getElementById('net-filter') || {}).value || '';
+    const fLower = filter.toLowerCase();
+    const visible = fLower ? _netRows.filter(r => r.url.toLowerCase().includes(fLower)) : _netRows;
+    const ev = visible[idx];
+    if (!ev) return;
+
+    let body = '';
+    body += `URL\n${ev.url}\n\n`;
+    body += `Method: ${ev.method || '?'}   Status: ${ev.status || 'pending'} ${ev.statusText || ''}\n`;
+    body += `Type: ${ev.resType || '?'}   MIME: ${ev.mimeType || '?'}\n`;
+    body += `Time: ${new Date(ev.ts).toLocaleTimeString()}\n\n`;
+
+    if (ev.postData) {
+        body += `─── Request Body ───\n`;
+        try { body += JSON.stringify(JSON.parse(ev.postData), null, 2); }
+        catch { body += ev.postData; }
+        body += '\n\n';
+    }
+
+    if (ev.headers && Object.keys(ev.headers).length) {
+        body += `─── Request Headers ───\n`;
+        body += Object.entries(ev.headers).map(([k,v]) => `${k}: ${v}`).join('\n');
+        body += '\n\n';
+    }
+
+    if (ev.responseHeaders && Object.keys(ev.responseHeaders).length) {
+        body += `─── Response Headers ───\n`;
+        body += Object.entries(ev.responseHeaders).map(([k,v]) => `${k}: ${v}`).join('\n');
+    }
+
+    document.getElementById('net-detail-body').textContent = body;
+    document.getElementById('net-detail').style.display = 'block';
+}
+
+function closeNetDetail() {
+    document.getElementById('net-detail').style.display = 'none';
+}
+
+// ── VEO AI FREE + BACKEND TOGGLE ──────────────────────────────────────────────
+
+function onVidBackendChange() {
+    const backend = document.querySelector('input[name="vid-backend"]:checked').value;
+    const isVeoFree = backend === 'veo-free';
+    document.getElementById('vibes-section').style.display   = isVeoFree ? 'none'  : 'block';
+    document.getElementById('veo-free-section').style.display = isVeoFree ? 'block' : 'none';
+    document.getElementById('vibes-bulk-toggle').style.display = isVeoFree ? 'none' : 'flex';
+    document.getElementById('vid-backend-desc').textContent  = isVeoFree
+        ? 'Veo AI Free · no login · proxy rotation for unlimited videos'
+        : 'Vibes.ai · direct API · fast generation';
+    if (isVeoFree) checkVeoFreeProxies();
+}
+
+async function checkVeoFreeProxies() {
+    const el = document.getElementById('veo-free-proxy-status');
+    const proxyCountEl = document.getElementById('veo-proxy-count');
+    const workerCountEl = document.getElementById('veo-worker-count');
+    const textarea = document.getElementById('veo-proxy-list');
+    const workerInput = document.getElementById('veo-worker-url');
+    if (!el) return;
+    try {
+        // Load saved worker URL
+        const wr = await fetch('/api/veo/worker');
+        if (wr.ok) {
+            const wd = await wr.json();
+            if (wd.urls && wd.urls.length && workerInput && !workerInput.value.trim()) workerInput.value = wd.urls.join('\n');
+            else if (wd.url && workerInput && !workerInput.value.trim()) workerInput.value = wd.url;
+            if (wd.urls && wd.urls.length || wd.url) {
+                const wcount = (wd.urls || [wd.url]).filter(Boolean).length;
+                if (workerCountEl) workerCountEl.textContent = '(' + wcount + ' loaded)';
+                el.textContent = wcount + ' worker(s) active — rotating across CF edge IPs.';
+                el.style.color = '#22c55e';
+                return;
+            }
+        }
+        // Load saved proxies
+        const r = await fetch('/api/veo/proxy-status');
+        if (r.ok) {
+            const d = await r.json();
+            if (proxyCountEl) proxyCountEl.textContent = d.count ? '(' + d.count + ' loaded)' : '';
+            if (textarea && d.proxies && d.proxies.length && !textarea.value.trim()) {
+                textarea.value = d.proxies.join('\n');
+            }
+            if (d.count) {
+                el.textContent = d.count + ' proxies active — rotating for unlimited generation.';
+                el.style.color = '#22c55e';
+            } else {
+                el.textContent = 'No proxies — rate limit: 2 videos per IP. Add a Worker URL above or paste proxies.';
+                el.style.color = '#f59e0b';
+            }
+        }
+    } catch {
+        el.textContent = 'Add a Cloudflare Worker URL or proxies to bypass the 2-video per IP limit.';
+        el.style.color = '#f59e0b';
+    }
+}
+
+async function veoWorkerSave() {
+    const input = document.getElementById('veo-worker-url');
+    const el = document.getElementById('veo-free-proxy-status');
+    const countEl = document.getElementById('veo-worker-count');
+    const urls = (input.value || '').split('\n').map(u => u.trim().replace(/\/+$/, '')).filter(Boolean);
+    const url = urls[0] || '';
+    try {
+        const r = await fetch('/api/veo/worker', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, urls }),
+        });
+        const d = await r.json();
+        if (d.ok) {
+            if (countEl) countEl.textContent = urls.length ? '(' + urls.length + ' loaded)' : '';
+            if (urls.length) {
+                el.textContent = urls.length + ' worker(s) active — rotating across CF edge IPs.';
+                el.style.color = '#22c55e';
+                toast(urls.length + ' worker URL(s) saved', 'success');
+            } else {
+                el.textContent = 'No workers — add worker URLs above or use proxies below.';
+                el.style.color = '#f59e0b';
+                toast('Worker URLs cleared', 'success');
+            }
+        }
+    } catch(e) { toast('Failed to save worker URLs: ' + e.message, 'error'); }
+}
+
+async function veoProxySave() {
+    const textarea = document.getElementById('veo-proxy-list');
+    const el = document.getElementById('veo-free-proxy-status');
+    const countEl = document.getElementById('veo-proxy-count');
+    const proxies = (textarea.value || '').split('\n').map(s => s.trim()).filter(Boolean);
+    try {
+        const r = await fetch('/api/veo/proxy-set', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ proxies }),
+        });
+        const d = await r.json();
+        if (d.ok) {
+            if (proxyCountEl) proxyCountEl.textContent = d.count ? '(' + d.count + ' loaded)' : '';
+            el.textContent = d.count + ' proxies saved — rotating for unlimited generation.';
+            el.style.color = '#22c55e';
+            toast(d.count + ' proxies loaded', 'success');
+        }
+    } catch (e) {
+        toast('Failed to save proxies: ' + e.message, 'error');
+    }
+}
+
+function veoProxyClear() {
+    const textarea = document.getElementById('veo-proxy-list');
+    if (textarea) textarea.value = '';
+    veoProxySave();
+}
+
+async function submitVideoViaVeoFree(prompt, aspect) {
+    const btn = document.getElementById('vid-submit-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+    const aspectRatio = aspect === '9:16' ? 'portrait' : 'landscape';
+    const jobId = 'veo-free-' + Date.now();
+    videoJobs.unshift({
+        id: jobId, prompt: prompt.slice(0, 60) + (prompt.length > 60 ? '…' : ''),
+        fullPrompt: prompt, aspect, status: 'pending',
+        downloadUrl: null, startTime: Date.now(), backend: 'veo-free', retryCount: 0,
+    });
+    renderVideoJobs();
+
+    try {
+        const r = await fetch('/api/veo/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, aspectRatio, quality: '720p' }),
+        });
+        const res = await r.json();
+        if (!r.ok) throw new Error(res.error || 'HTTP ' + r.status);
+
+        const raw = res.data;
+        let sceneData = null;
+        // API may return the scene ID as a bare number/string
+        if (typeof raw === 'number' || (typeof raw === 'string' && /^\d{5,}$/.test(raw.trim()))) {
+            sceneData = String(raw).trim();
+        } else if (raw && typeof raw === 'object') {
+            sceneData = raw.sceneData || raw.scene_data || raw.id || (raw.data && raw.data.sceneData) || null;
+            if (!sceneData && raw.raw) {
+                const m = String(raw.raw).match(/sceneData[^\d]*(\d+)/i);
+                if (m) sceneData = m[1];
+            }
+            if (!sceneData) {
+                for (const v of Object.values(raw)) {
+                    if (typeof v === 'number' || (typeof v === 'string' && /^\d{5,}$/.test(v))) { sceneData = String(v); break; }
+                }
+            }
+        }
+        // Detect IP-based rate limit from veoaifree.com
+        const rawStr = JSON.stringify(raw || '');
+        if (/limit reached|maximum allowance|rate.?limit/i.test(rawStr)) {
+            throw new Error('Rate limit reached (2 videos per IP). Add VEO_PROXIES to your server environment to rotate IPs and bypass this limit.');
+        }
+        if (!sceneData) throw new Error('No scene ID returned: ' + JSON.stringify(raw).slice(0, 200));
+
+        const sessionNonce = res.nonce || '594d6156aa';
+        const sessionCookie = res.cookie || '';
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.veoSceneData = sceneData; job.veoInfo = 'Polling for result…'; }
+        renderVideoJobs();
+        toast('Veo AI generating — polling every 8s…', 'success');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film"></i> Generate Video';
+        startVeoFreePoll(jobId, sceneData, sessionNonce, sessionCookie);
+    } catch (e) {
+        const job = videoJobs.find(j => j.id === jobId);
+        if (job) { job.status = 'failed'; job.error = e.message; }
+        renderVideoJobs();
+        toast('Veo AI Free error: ' + e.message, 'error');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-film"></i> Generate Video';
+    }
+}
+
+function startVeoFreePoll(jobId, sceneData, nonce, cookie) {
+    const maxAttempts = 40;
+    let attempt = 0;
+    const interval = setInterval(async () => {
+        attempt++;
+        const job = videoJobs.find(j => j.id === jobId);
+        if (!job || job.status === 'done' || job.status === 'failed') { clearInterval(interval); return; }
+        try {
+            const r = await fetch('/api/veo/poll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sceneData, nonce, cookie }),
+            });
+            const res = await r.json();
+            if (!r.ok) { console.warn('[Veo Poll]', r.status, res); return; }
+            if (res.videoUrl) {
+                clearInterval(interval);
+                job.status = 'done';
+                job.downloadUrl = res.videoUrl;
+                job.veoInfo = 'Ready';
+                renderVideoJobs();
+                toast('Veo AI Free — video ready! Download it quickly — expires soon.', 'success');
+                // Auto-trigger download immediately since URL expires in ~60s
+                const a = document.createElement('a');
+                a.href = '/api/veo/video?url=' + encodeURIComponent(res.videoUrl);
+                a.download = 'veo-video.mp4';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                return;
+            }
+            const raw = res.data;
+            if (raw && (raw.status === 'failed' || raw.error)) {
+                clearInterval(interval);
+                job.status = 'failed';
+                job.error = raw.error || raw.message || 'Generation failed';
+                renderVideoJobs();
+                toast('Veo AI Free failed: ' + job.error, 'error');
+                return;
+            }
+            job.veoInfo = 'Polling… (' + attempt + '/' + maxAttempts + ')';
+            renderVideoJobs();
+            if (attempt >= maxAttempts) {
+                clearInterval(interval);
+                job.status = 'failed';
+                job.error = 'Timed out after 5 minutes';
+                renderVideoJobs();
+                toast('Veo AI Free timed out', 'error');
+            }
+        } catch (e) { console.warn('[Veo Poll] error:', e.message); }
+    }, 8000);
+}
+</script>
+</body>
+</html>

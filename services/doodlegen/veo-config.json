@@ -1,0 +1,18 @@
+{
+  "workerUrl": "https://silent-silence-1f0d.aashutoshdahal404.workers.dev",
+  "proxies": [
+    "http://rbbrdzpk:k3kh0t3v33ne@31.59.20.176:6754",
+    "http://rbbrdzpk:k3kh0t3v33ne@31.56.127.193:7684",
+    "http://rbbrdzpk:k3kh0t3v33ne@45.38.107.97:6014",
+    "http://rbbrdzpk:k3kh0t3v33ne@198.105.121.200:6462",
+    "http://rbbrdzpk:k3kh0t3v33ne@64.137.96.74:6641",
+    "http://rbbrdzpk:k3kh0t3v33ne@198.23.243.226:6361",
+    "http://rbbrdzpk:k3kh0t3v33ne@38.154.185.97:6370",
+    "http://rbbrdzpk:k3kh0t3v33ne@84.247.60.125:6095",
+    "http://rbbrdzpk:k3kh0t3v33ne@142.111.67.146:5611",
+    "http://rbbrdzpk:k3kh0t3v33ne@191.96.254.138:6185"
+  ],
+  "workerUrls": [
+    "https://silent-silence-1f0d.aashutoshdahal404.workers.dev"
+  ]
+}

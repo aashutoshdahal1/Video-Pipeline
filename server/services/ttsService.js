@@ -7,7 +7,7 @@ const { spawn } = require('child_process');
 const TTS_URL = process.env.POCKET_TTS_URL || 'http://localhost:8000';
 const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 
-const POCKET_TTS_DIR = '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts';
+const POCKET_TTS_DIR = path.join(__dirname, '..', '..', 'services', 'pocket-tts');
 const UV_BIN = '/Users/aashutoshdahal/.local/bin/uv';
 
 let pocketTtsProc = null;

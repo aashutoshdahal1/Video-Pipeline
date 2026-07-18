@@ -2,62 +2,61 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+const ROOT = __dirname;
+const SVC  = path.join(ROOT, 'services');
+
 // ── Service definitions ────────────────────────────────────────────────────
 const SERVICES = [
   {
     label: 'pocket-tts',
     cmd: '/Users/aashutoshdahal/.local/bin/uv',
-    args: [
-      'run', '--project',
-      '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts',
-      'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000',
-    ],
-    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts',
+    args: ['run', '--project', path.join(SVC, 'pocket-tts'), 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
+    cwd: path.join(SVC, 'pocket-tts'),
   },
   {
     label: 'whisper',
-    cmd: '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend/venv/bin/python',
+    cmd: path.join(SVC, 'whisper', 'venv', 'bin', 'python'),
     args: ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', '8001'],
-    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend',
+    cwd: path.join(SVC, 'whisper'),
   },
   {
     label: 'doodlegen',
     cmd: 'node',
     args: ['server.js'],
-    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/doodlegen-full',
+    cwd: path.join(SVC, 'doodlegen'),
   },
   {
     label: 'script-to-video:api',
     cmd: 'node',
     args: ['server.js'],
-    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/script-to-video/server',
+    cwd: path.join(SVC, 'script-to-video', 'server'),
   },
   {
     label: 'script-to-video:ui',
     cmd: 'npm',
     args: ['run', 'dev'],
-    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/script-to-video',
+    cwd: path.join(SVC, 'script-to-video'),
   },
   {
     label: 'pipeline:server',
     cmd: 'node',
     args: ['index.js'],
-    cwd: path.join(__dirname, 'server'),
+    cwd: path.join(ROOT, 'server'),
   },
   {
     label: 'pipeline:client',
     cmd: 'npm',
     args: ['run', 'dev'],
-    cwd: path.join(__dirname, 'client'),
+    cwd: path.join(ROOT, 'client'),
   },
 ];
 
 // ── Bootstrap server/.env if missing ──────────────────────────────────────
-const envSrc = path.join(__dirname, 'server', '.env.example');
-const envDst = path.join(__dirname, 'server', '.env');
+const envSrc = path.join(ROOT, 'server', '.env.example');
+const envDst = path.join(ROOT, 'server', '.env');
 if (!fs.existsSync(envDst) && fs.existsSync(envSrc)) {
   fs.copyFileSync(envSrc, envDst);
-  console.log('Created server/.env from example.');
+  console.log('Created server/.env from .env.example');
 }
 
 // ── Spawn helper ───────────────────────────────────────────────────────────

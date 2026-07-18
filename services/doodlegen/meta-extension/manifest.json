@@ -1,0 +1,44 @@
+{
+   "action": {
+      "default_icon": {
+         "128": "images/icon128.png",
+         "16": "images/icon16.png",
+         "32": "images/icon32.png",
+         "48": "images/icon48.png"
+      },
+      "default_title": "Meta Automator – Auto Meta Bulk AI Image & Video Generator"
+   },
+   "background": {
+      "service_worker": "background.js",
+      "type": "module"
+   },
+   "content_scripts": [ {
+      "js": [ "flowContentScript.js" ],
+      "matches": [ "https://www.meta.ai/create*" ],
+      "run_at": "document_idle"
+   } ],
+   "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'"
+   },
+   "description": "Automate Meta AI video and image generation. Bulk create AI videos and images with custom settings.",
+   "host_permissions": [ "https://www.meta.ai/*", "http://*/*", "https://*/*" ],
+   "icons": {
+      "128": "images/icon128.png",
+      "16": "images/icon16.png",
+      "32": "images/icon32.png",
+      "48": "images/icon48.png"
+   },
+   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvBKnVCaNg/fCUL648GtzGhgngXXC1GEeJ/y2CGtMgySlGsHjezohFaXWbw+5d15tAyygZAtRaDuIFaLeWoQl6uiyOCH1LP9uDgbE6E04zn3Vt5i4mhQ4sNdCAysMsPqlZC2tmSxskmDYy59mjKnWj/5AWv9UWZ8QBx1AQYgYwI4duAWOCsnfPCMcYjF7MyqO85d2DabirX2TfJvlwxfGjXk0yBgZU6BN1UyW2rK2KlQQTtSxfK8HIgpW5l3xnEgDPEoG6WzRsmtAPv4y7uQMbPpWf4/fAYsghqrDjWaPe6k8bbjf9aMSjQZvn4pz46Vm8+cU0WYK2zTCcmzKQEv8PwIDAQAB",
+   "manifest_version": 3,
+   "name": "Meta Automator – Auto Meta Bulk AI Image & Video Generator",
+   "permissions": [ "activeTab", "storage", "sidePanel", "identity", "tabs", "scripting", "downloads", "offscreen" ],
+   "side_panel": {
+      "default_path": "./src/index.html"
+   },
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "1.0.2",
+   "web_accessible_resources": [ {
+      "matches": [ "https://www.meta.ai/*" ],
+      "resources": [ "alwaysActive.js", "alwaysActiveIsolated.js", "logo.png" ]
+   } ]
+}

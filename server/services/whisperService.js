@@ -1,12 +1,13 @@
 const FormData = require('form-data');
 const fs = require('fs');
+const path = require('path');
 const fetch = require('node-fetch');
 const { spawn } = require('child_process');
 
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:8001';
 
-const WHISPER_DIR = '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend';
-const WHISPER_PYTHON = `${WHISPER_DIR}/venv/bin/python`;
+const WHISPER_DIR = path.join(__dirname, '..', '..', 'services', 'whisper');
+const WHISPER_PYTHON = path.join(WHISPER_DIR, 'venv', 'bin', 'python');
 
 let whisperProc = null;
 

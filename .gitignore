@@ -1,6 +1,14 @@
 node_modules/
 server/node_modules/
 client/node_modules/
+services/doodlegen/node_modules/
+services/script-to-video/node_modules/
+services/script-to-video/server/node_modules/
+services/script-to-video/dist/
+services/whisper/venv/
+services/whisper/__pycache__/
+services/pocket-tts/.venv/
+services/pocket-tts/__pycache__/
 server/.env
 server/uploads/
 client/dist/

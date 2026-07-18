@@ -1,0 +1,21 @@
+node_modules/
+# Chrome session — contains Google auth cookies and session tokens
+.chrome-session/
+
+# Saved credentials and tokens
+.google-cookies.json
+.tokens.json
+oauth.json
+
+# Claude worktrees
+.claude/worktrees/
+
+# Per-account Chrome profiles and session cookies
+.accounts/
+
+# Vibes.ai and Meta session cookies
+vibes-cookies.json
+meta-cookies.json
+
+# Vibes account sessions (Chrome profiles + cookies)
+.vibes-accounts/

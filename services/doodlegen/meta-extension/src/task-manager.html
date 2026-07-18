@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meta AI Automator - Task Manager</title>
+    <!-- Prevent flash of wrong theme — apply dark class before React hydrates -->
+    <script>
+      (function () {
+        var t = localStorage.getItem('theme');
+        if (t !== 'light') document.documentElement.classList.add('dark');
+      })();
+    </script>
+    <script type="module" crossorigin src="/taskManager.js"></script>
+    <link rel="modulepreload" crossorigin href="/modulepreload-polyfill.js">
+    <link rel="modulepreload" crossorigin href="/queueDB.js">
+    <link rel="stylesheet" href="/queueDB.css">
+  </head>
+  <body>
+    <div id="root"></div>
+    
+  </body>
+</html>

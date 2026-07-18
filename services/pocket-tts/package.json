@@ -1,0 +1,12 @@
+{
+  "name": "pocket-tts-backend",
+  "version": "1.0.0",
+  "description": "Pocket TTS FastAPI backend",
+  "scripts": {
+    "dev": "export PATH=$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH && uv run pocket-tts serve --host localhost --port 8000",
+    "start": "export PATH=$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH && uv run pocket-tts serve --host localhost --port 8000"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
