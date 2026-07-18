@@ -7,7 +7,7 @@ import { StepBadge } from '../components/StepBadge';
 import { Square, Play, ImageIcon, FolderOpen, RotateCcw, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-const DOODLEGEN = import.meta.env.VITE_DOODLEGEN_URL || 'http://localhost:3000';
+const DOODLEGEN = '/doodlegen';
 
 type QueueItem = ImagePrompt & { index: number; savedPaths: string[] };
 
