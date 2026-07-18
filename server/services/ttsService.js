@@ -6,16 +6,32 @@ const path = require('path');
 const TTS_URL = process.env.POCKET_TTS_URL || 'http://localhost:8000';
 const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 
+async function ttsPost(form) {
+  try {
+    return await axios.post(`${TTS_URL}/tts`, form, {
+      headers: form.getHeaders(),
+      responseType: 'arraybuffer',
+      timeout: 120000,
+    });
+  } catch (err) {
+    if (err.code === 'ECONNREFUSED' || !err.message) {
+      throw new Error(`pocket-tts is not running (${TTS_URL}). Start it with: uv run pocket-tts serve`);
+    }
+    // axios wraps HTTP errors — surface the upstream message if available
+    if (err.response) {
+      const body = err.response.data?.toString?.() || '';
+      throw new Error(`pocket-tts error ${err.response.status}: ${body.slice(0, 200)}`);
+    }
+    throw err;
+  }
+}
+
 async function generateAudio(text, voiceName = 'alba', jobId) {
   const form = new FormData();
   form.append('text', text);
   form.append('voice_url', voiceName);
 
-  const response = await axios.post(`${TTS_URL}/tts`, form, {
-    headers: form.getHeaders(),
-    responseType: 'arraybuffer',
-    timeout: 120000
-  });
+  const response = await ttsPost(form);
 
   const filename = `audio_${jobId}.wav`;
   const filepath = path.join(UPLOADS_DIR, filename);
@@ -37,11 +53,7 @@ async function generateAudioWithClone(text, voiceBuffer, originalName, jobId) {
   form.append('text', text);
   form.append('voice_wav', voiceBuffer, { filename: originalName || 'clone.wav', contentType: mimeFromName(originalName) });
 
-  const response = await axios.post(`${TTS_URL}/tts`, form, {
-    headers: form.getHeaders(),
-    responseType: 'arraybuffer',
-    timeout: 180000
-  });
+  const response = await ttsPost(form);
 
   const filename = `audio_${jobId}.wav`;
   const filepath = path.join(UPLOADS_DIR, filename);

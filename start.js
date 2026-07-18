@@ -31,7 +31,7 @@ console.log('Starting Video Pipeline...\n');
 
 const pocketTts = run(
   uvBin,
-  ['run', 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
+  ['run', '--project', pocketTtsDir, 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
   pocketTtsDir,
   'pocket-tts'
 );
