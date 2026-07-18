@@ -2,52 +2,87 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const serverDir   = path.join(__dirname, 'server');
-const clientDir   = path.join(__dirname, 'client');
-const whisperDir  = '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend';
-const whisperPython = path.join(whisperDir, 'venv/bin/python');
-const pocketTtsDir = '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts';
-const uvBin = '/Users/aashutoshdahal/.local/bin/uv';
+// ── Service definitions ────────────────────────────────────────────────────
+const SERVICES = [
+  {
+    label: 'pocket-tts',
+    cmd: '/Users/aashutoshdahal/.local/bin/uv',
+    args: [
+      'run', '--project',
+      '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts',
+      'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000',
+    ],
+    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts',
+  },
+  {
+    label: 'whisper',
+    cmd: '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend/venv/bin/python',
+    args: ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', '8001'],
+    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend',
+  },
+  {
+    label: 'doodlegen',
+    cmd: 'node',
+    args: ['server.js'],
+    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/doodlegen-full',
+  },
+  {
+    label: 'script-to-video:api',
+    cmd: 'node',
+    args: ['server.js'],
+    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/script-to-video/server',
+  },
+  {
+    label: 'script-to-video:ui',
+    cmd: 'npm',
+    args: ['run', 'dev'],
+    cwd: '/Users/aashutoshdahal/Desktop/personal-sites/script-to-video',
+  },
+  {
+    label: 'pipeline:server',
+    cmd: 'node',
+    args: ['index.js'],
+    cwd: path.join(__dirname, 'server'),
+  },
+  {
+    label: 'pipeline:client',
+    cmd: 'npm',
+    args: ['run', 'dev'],
+    cwd: path.join(__dirname, 'client'),
+  },
+];
 
-// Copy .env.example → .env if not already present
-const envSrc = path.join(serverDir, '.env.example');
-const envDst = path.join(serverDir, '.env');
+// ── Bootstrap server/.env if missing ──────────────────────────────────────
+const envSrc = path.join(__dirname, 'server', '.env.example');
+const envDst = path.join(__dirname, 'server', '.env');
 if (!fs.existsSync(envDst) && fs.existsSync(envSrc)) {
   fs.copyFileSync(envSrc, envDst);
-  console.log('Created server/.env from example. Edit it to customise service URLs.');
+  console.log('Created server/.env from example.');
 }
 
-function run(cmd, args, cwd, label) {
+// ── Spawn helper ───────────────────────────────────────────────────────────
+const procs = [];
+
+function run({ label, cmd, args, cwd }) {
   const proc = spawn(cmd, args, { cwd, stdio: 'pipe', shell: false });
   proc.stdout.on('data', d => process.stdout.write(`[${label}] ${d}`));
   proc.stderr.on('data', d => process.stderr.write(`[${label}] ${d}`));
   proc.on('exit', code => {
-    if (code !== 0) console.error(`[${label}] exited with code ${code}`);
+    if (code !== 0 && code !== null) console.error(`[${label}] exited with code ${code}`);
   });
+  procs.push(proc);
   return proc;
 }
 
-console.log('Starting Video Pipeline...\n');
+// ── Start everything ───────────────────────────────────────────────────────
+console.log('Starting all services...\n');
+for (const svc of SERVICES) run(svc);
 
-const pocketTts = run(
-  uvBin,
-  ['run', '--project', pocketTtsDir, 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
-  pocketTtsDir,
-  'pocket-tts'
-);
-const whisper = run(
-  whisperPython,
-  ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', '8001'],
-  whisperDir,
-  'whisper'
-);
-const server = run('node', ['index.js'], serverDir, 'server');
-const client = run('npm', ['run', 'dev'], clientDir, 'client');
-
-process.on('SIGINT', () => {
-  pocketTts.kill();
-  whisper.kill();
-  server.kill();
-  client.kill();
+// ── Graceful shutdown ──────────────────────────────────────────────────────
+function shutdown() {
+  console.log('\nShutting down…');
+  for (const p of procs) { try { p.kill(); } catch {} }
   process.exit(0);
-});
+}
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
