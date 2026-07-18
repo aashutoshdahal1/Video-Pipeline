@@ -9,9 +9,11 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     server: {
       proxy: {
-        '/api':       { target: BACKEND, changeOrigin: true },
-        '/uploads':   { target: BACKEND, changeOrigin: true },
-        '/socket.io': { target: BACKEND, changeOrigin: true, ws: true },
+        '/api':        { target: BACKEND, changeOrigin: true },
+        '/uploads':    { target: BACKEND, changeOrigin: true },
+        '/socket.io':  { target: BACKEND, changeOrigin: true, ws: true },
+        '/doodlegen':  { target: 'http://localhost:3000', changeOrigin: true,
+                         rewrite: (p) => p.replace(/^\/doodlegen/, '') },
       },
     },
   };

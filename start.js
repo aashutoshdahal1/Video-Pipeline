@@ -64,8 +64,11 @@ if (!fs.existsSync(envDst) && fs.existsSync(envSrc)) {
 // it. Write it into client/.env so Vite's proxy always targets the right port.
 const backendPort = process.env.PORT || 6000;
 const clientEnvPath = path.join(ROOT, 'client', '.env');
-fs.writeFileSync(clientEnvPath, `BACKEND_PORT=${backendPort}\n`);
-console.log(`client/.env → BACKEND_PORT=${backendPort}`);
+fs.writeFileSync(clientEnvPath, [
+  `BACKEND_PORT=${backendPort}`,
+  `VITE_DOODLEGEN_URL=/doodlegen`,
+].join('\n') + '\n');
+console.log(`client/.env → BACKEND_PORT=${backendPort}, VITE_DOODLEGEN_URL=/doodlegen`);
 
 // ── Spawn helper ───────────────────────────────────────────────────────────
 const procs = [];
