@@ -2,10 +2,12 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-const serverDir  = path.join(__dirname, 'server');
-const clientDir  = path.join(__dirname, 'client');
-const whisperDir = '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend';
+const serverDir   = path.join(__dirname, 'server');
+const clientDir   = path.join(__dirname, 'client');
+const whisperDir  = '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend';
 const whisperPython = path.join(whisperDir, 'venv/bin/python');
+const pocketTtsDir = '/Users/aashutoshdahal/Desktop/personal-sites/Voice-Clone-Generator/pocket-tts';
+const uvBin = '/Users/aashutoshdahal/.local/bin/uv';
 
 // Copy .env.example → .env if not already present
 const envSrc = path.join(serverDir, '.env.example');
@@ -27,6 +29,12 @@ function run(cmd, args, cwd, label) {
 
 console.log('Starting Video Pipeline...\n');
 
+const pocketTts = run(
+  uvBin,
+  ['run', 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
+  pocketTtsDir,
+  'pocket-tts'
+);
 const whisper = run(
   whisperPython,
   ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', '8001'],
@@ -37,6 +45,7 @@ const server = run('node', ['index.js'], serverDir, 'server');
 const client = run('npm', ['run', 'dev'], clientDir, 'client');
 
 process.on('SIGINT', () => {
+  pocketTts.kill();
   whisper.kill();
   server.kill();
   client.kill();
