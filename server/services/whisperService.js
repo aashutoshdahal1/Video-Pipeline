@@ -1,11 +1,54 @@
 const FormData = require('form-data');
 const fs = require('fs');
 const fetch = require('node-fetch');
+const { spawn } = require('child_process');
 
 const WHISPER_URL = process.env.WHISPER_URL || 'http://localhost:8001';
 
-// Returns a promise that resolves with { transcript, segments } once SSE stream ends
+const WHISPER_DIR = '/Users/aashutoshdahal/Desktop/personal-sites/transcript-video-openai-whisper/backend';
+const WHISPER_PYTHON = `${WHISPER_DIR}/venv/bin/python`;
+
+let whisperProc = null;
+
+function startWhisper() {
+  if (whisperProc && !whisperProc.killed) return;
+  console.log('[whisper] Starting automatically…');
+  whisperProc = spawn(
+    WHISPER_PYTHON,
+    ['-m', 'uvicorn', 'main:app', '--host', '127.0.0.1', '--port', '8001'],
+    { cwd: WHISPER_DIR, stdio: 'pipe', detached: false }
+  );
+  whisperProc.stdout.on('data', d => process.stdout.write(`[whisper] ${d}`));
+  whisperProc.stderr.on('data', d => process.stderr.write(`[whisper] ${d}`));
+  whisperProc.on('exit', code => {
+    console.log(`[whisper] exited (${code})`);
+    whisperProc = null;
+  });
+}
+
+async function waitForWhisper(retries = 30, intervalMs = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const r = await fetch(`${WHISPER_URL}/`, { method: 'GET', timeout: 1000 });
+      if (r.status < 500) return; // any non-5xx means uvicorn is up
+    } catch {}
+    await new Promise(r => setTimeout(r, intervalMs));
+  }
+  throw new Error(`Whisper did not become ready after ${retries}s`);
+}
+
+async function ensureWhisper() {
+  try {
+    const r = await fetch(`${WHISPER_URL}/`, { method: 'GET', timeout: 1000 });
+    if (r.status < 500) return;
+  } catch {}
+  startWhisper();
+  await waitForWhisper();
+}
+
 async function transcribeAudio(audioPath, modelName = 'base') {
+  await ensureWhisper();
+
   const form = new FormData();
   form.append('file', fs.createReadStream(audioPath));
   form.append('model_name', modelName);
