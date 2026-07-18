@@ -9,8 +9,8 @@ const SVC  = path.join(ROOT, 'services');
 const SERVICES = [
   {
     label: 'pocket-tts',
-    cmd: '/Users/aashutoshdahal/.local/bin/uv',
-    args: ['run', '--project', path.join(SVC, 'pocket-tts'), 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
+    cmd: path.join(SVC, 'pocket-tts', '.venv', 'bin', 'python'),
+    args: ['-m', 'pocket_tts', 'serve', '--host', 'localhost', '--port', '8000'],
     cwd: path.join(SVC, 'pocket-tts'),
   },
   {

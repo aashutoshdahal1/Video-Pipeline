@@ -8,7 +8,7 @@ const TTS_URL = process.env.POCKET_TTS_URL || 'http://localhost:8000';
 const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 
 const POCKET_TTS_DIR = path.join(__dirname, '..', '..', 'services', 'pocket-tts');
-const UV_BIN = '/Users/aashutoshdahal/.local/bin/uv';
+const POCKET_TTS_PYTHON = path.join(POCKET_TTS_DIR, '.venv', 'bin', 'python');
 
 let pocketTtsProc = null;
 
@@ -16,8 +16,8 @@ function startPocketTts() {
   if (pocketTtsProc && !pocketTtsProc.killed) return;
   console.log('[pocket-tts] Starting automatically…');
   pocketTtsProc = spawn(
-    UV_BIN,
-    ['run', '--project', POCKET_TTS_DIR, 'pocket-tts', 'serve', '--host', 'localhost', '--port', '8000'],
+    POCKET_TTS_PYTHON,
+    ['-m', 'pocket_tts', 'serve', '--host', 'localhost', '--port', '8000'],
     { cwd: POCKET_TTS_DIR, stdio: 'pipe', detached: false }
   );
   pocketTtsProc.stdout.on('data', d => process.stdout.write(`[pocket-tts] ${d}`));
