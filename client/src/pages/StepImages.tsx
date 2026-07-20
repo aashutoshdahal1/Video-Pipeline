@@ -113,19 +113,38 @@ export default function StepImages() {
       let urls: string[] = [];
       let errorMsg: string | null = null;
 
-      try {
-        const resp = await fetch(`${DOODLEGEN}/api/generate/image`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, aspect, count: Math.min(count, 4), tokens: [] })
-        });
-        const data = await resp.json();
-        if (!resp.ok || !data.urls?.length) throw new Error(data.error || 'No images returned');
-        urls = data.urls;
-        const elapsed = (Date.now() - t0) / 1000;
-        timingSamples.current.push(elapsed / count);
-        if (timingSamples.current.length > 20) timingSamples.current.shift();
-      } catch (e: any) { errorMsg = e.message; }
+      // Retry up to 6×, 5 s apart, when doodlegen hasn't obtained its token yet
+      const MAX_TOKEN_RETRIES = 6;
+      for (let attempt = 0; attempt <= MAX_TOKEN_RETRIES; attempt++) {
+        if (stopRef.current) break;
+        try {
+          const resp = await fetch(`${DOODLEGEN}/api/generate/image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, aspect, count: Math.min(count, 4), tokens: [] })
+          });
+          const data = await resp.json();
+          if (resp.status === 401 && data.error?.includes('No token')) {
+            // Server is still logging in — wait and retry
+            if (attempt < MAX_TOKEN_RETRIES) {
+              setQueue(prev => {
+                const next = [...prev];
+                next[claimed] = { ...next[claimed], error: `Waiting for token… (${attempt + 1}/${MAX_TOKEN_RETRIES})` };
+                return next;
+              });
+              await new Promise(r => setTimeout(r, 5000));
+              continue;
+            }
+            throw new Error(data.error);
+          }
+          if (!resp.ok || !data.urls?.length) throw new Error(data.error || 'No images returned');
+          urls = data.urls;
+          const elapsed = (Date.now() - t0) / 1000;
+          timingSamples.current.push(elapsed / count);
+          if (timingSamples.current.length > 20) timingSamples.current.shift();
+          break;
+        } catch (e: any) { errorMsg = e.message; break; }
+      }
 
       const savedPaths: string[] = [];
       if (urls.length) {
