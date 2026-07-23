@@ -1124,7 +1124,13 @@ app.post('/api/veo/generate', async (req, res) => {
                     headers: { 'content-type': 'application/json' },
                     body: JSON.stringify({ prompt: prompt.trim(), aspectRatio, quality, attempt: wi }),
                 });
-                const parsed = await r.json();
+                const rawText = await r.text();
+                let parsed;
+                try { parsed = JSON.parse(rawText); }
+                catch {
+                    console.warn('[Veo Generate] worker non-JSON (' + r.status + '):', rawText.slice(0, 200));
+                    continue;
+                }
                 console.log('[Veo Generate] worker', wUrl.split('/')[2], JSON.stringify(parsed).slice(0, 100));
                 if (parsed.error === 'rate-limited') {
                     tried.add(wUrl);
@@ -1205,8 +1211,11 @@ app.post('/api/veo/poll', async (req, res) => {
                 method: 'POST', headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({ sceneData, nonce }),
             });
-            const parsed = await r.json();
-            rawVideoUrl = parsed.videoUrl || null;
+            const pollText = await r.text();
+            let parsed;
+            try { parsed = JSON.parse(pollText); }
+            catch { console.warn('[Veo Poll] worker non-JSON (' + r.status + '):', pollText.slice(0, 200)); }
+            if (parsed) rawVideoUrl = parsed.videoUrl || null;
         } catch (e) { console.warn('[Veo Poll] worker failed:', e.message); }
     }
 
